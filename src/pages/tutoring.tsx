@@ -27,7 +27,7 @@ export default function Tutoring() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Page Header */}
       <div className="mb-10 text-center">
-        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Find a Tutor
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">

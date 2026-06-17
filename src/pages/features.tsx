@@ -29,7 +29,7 @@ export default function Features() {
       <section className="bg-hero-gradient py-20">
         <div className="container-tight">
           <span className="text-xs uppercase tracking-[0.25em] text-gold">Features</span>
-          <h1 className="mt-3 font-display text-5xl md:text-6xl font-bold text-cream max-w-3xl">
+          <h1 className="mt-3 text-5xl md:text-6xl font-bold text-cream max-w-3xl">
             Sixteen reasons to make this <span className="italic text-gold">home.</span>
           </h1>
         </div>
@@ -42,7 +42,7 @@ export default function Features() {
               <span className="grid place-items-center h-11 w-11 rounded-lg bg-primary/10 text-primary">
                 <f.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 font-display text-lg font-semibold">{f.t}</h3>
+              <h3 className="mt-4 text-lg font-semibold">{f.t}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{f.d}</p>
             </div>
           ))}
@@ -54,7 +54,7 @@ export default function Features() {
           <img src={teacherOnline} alt="Teacher" loading="lazy" className="rounded-2xl shadow-elegant" />
           <div>
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Course architecture</span>
-            <h2 className="mt-3 font-display text-4xl font-bold">Organized the way you actually study.</h2>
+            <h2 className="mt-3 text-4xl font-bold">Organized the way you actually study.</h2>
             <pre className="mt-6 rounded-xl bg-card border border-border p-5 text-xs leading-relaxed overflow-x-auto">
 {`Category (Science)
  └─ Subcategory (Physics)
@@ -77,7 +77,7 @@ export default function Features() {
           <img src={liveClass} alt="Live class" loading="lazy" className="rounded-2xl shadow-elegant md:order-2" />
           <div className="md:order-1">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Payments</span>
-            <h2 className="mt-3 font-display text-4xl font-bold">Free where it counts, paid where it scales.</h2>
+            <h2 className="mt-3 text-4xl font-bold">Free where it counts, paid where it scales.</h2>
             <p className="mt-4 text-muted-foreground">Some courses are forever free. Premium courses are priced fairly and processed securely through Razorpay or PayPal — with optional student discounts.</p>
           </div>
         </div>

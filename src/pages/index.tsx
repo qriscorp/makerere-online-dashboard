@@ -26,7 +26,7 @@ export default function Home() {
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-4 py-1.5 text-xs font-medium text-cream backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" /> Now enrolling — January 2026 intake
             </span>
-            <h1 className="mt-6 font-display text-5xl md:text-7xl font-bold text-cream leading-[1.05]">
+            <h1 className="mt-6 text-5xl md:text-7xl font-bold text-cream leading-[1.05]">
               A university in your{" "}
               <span className="italic text-gold">pocket.</span>
             </h1>
@@ -49,7 +49,7 @@ export default function Home() {
                 { k: "95%", v: "Pass rate" },
               ].map((s) => (
                 <div key={s.v}>
-                  <dt className="font-display text-3xl md:text-4xl font-bold text-gold">{s.k}</dt>
+                  <dt className="text-3xl md:text-4xl font-bold text-gold">{s.k}</dt>
                   <dd className="text-xs uppercase tracking-wider text-cream/70 mt-1">{s.v}</dd>
                 </div>
               ))}
@@ -75,7 +75,7 @@ export default function Home() {
       <section className="container-tight py-24">
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">One platform · Three journeys</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold">Built for everyone in the classroom.</h2>
+          <h2 className="mt-3 text-4xl md:text-5xl font-bold">Built for everyone in the classroom.</h2>
           <p className="mt-4 text-muted-foreground">Whether you're learning, teaching, or running an institution — we have a home for you.</p>
         </div>
 
@@ -93,7 +93,7 @@ export default function Home() {
                   <span className="grid place-items-center h-10 w-10 rounded-lg bg-gold text-[oklch(0.2_0.03_40)]">
                     <c.icon className="h-5 w-5" />
                   </span>
-                  <h3 className="font-display text-2xl font-bold text-cream">{c.title}</h3>
+                  <h3 className="text-2xl font-bold text-cream">{c.title}</h3>
                 </div>
               </div>
               <div className="p-6">
@@ -127,7 +127,7 @@ export default function Home() {
             </div>
             <div>
               <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Live, every day</span>
-              <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold">Real classes. Real teachers. Right on your screen.</h2>
+              <h2 className="mt-3 text-4xl md:text-5xl font-bold">Real classes. Real teachers. Right on your screen.</h2>
               <p className="mt-4 text-muted-foreground">
                 Join interactive live sessions via Zoom or Jitsi Meet. Ask questions, raise your hand,
                 and replay anything you missed — without leaving home.
@@ -154,7 +154,7 @@ export default function Home() {
             </div>
             <div className="md:order-1">
               <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Library at your fingertips</span>
-              <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold">Every book, every note, every past paper.</h2>
+              <h2 className="mt-3 text-4xl md:text-5xl font-bold">Every book, every note, every past paper.</h2>
               <p className="mt-4 text-muted-foreground">
                 Download or read PDFs in-app. Browse a curated library of textbooks, lecture notes,
                 and a decade of past examination papers for every subject we offer.
@@ -173,7 +173,7 @@ export default function Home() {
       <section className="container-tight py-24">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">The full stack</span>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold">Everything an online university needs.</h2>
+          <h2 className="mt-3 text-4xl md:text-5xl font-bold">Everything an online university needs.</h2>
         </div>
         <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-4">
           {[
@@ -190,7 +190,7 @@ export default function Home() {
               <span className="grid place-items-center h-11 w-11 rounded-lg bg-primary/10 text-primary">
                 <f.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 font-display text-lg font-semibold">{f.t}</h3>
+              <h3 className="mt-4 text-lg font-semibold">{f.t}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{f.d}</p>
             </div>
           ))}
@@ -202,7 +202,7 @@ export default function Home() {
         <div className="container-tight">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Voices from campus</span>
-            <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold">Lives changed, one course at a time.</h2>
+            <h2 className="mt-3 text-4xl md:text-5xl font-bold">Lives changed, one course at a time.</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -213,7 +213,7 @@ export default function Home() {
               <figure key={t.n} className="rounded-2xl overflow-hidden bg-card border border-border shadow-soft">
                 <img src={t.img} alt={t.n} loading="lazy" className="h-56 w-full object-cover" />
                 <figcaption className="p-6">
-                  <p className="font-display italic text-lg leading-snug">"{t.q}"</p>
+                  <p className="italic text-lg leading-snug">"{t.q}"</p>
                   <div className="mt-4 text-sm">
                     <p className="font-semibold">{t.n}</p>
                     <p className="text-muted-foreground">{t.r}</p>
@@ -231,7 +231,7 @@ export default function Home() {
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${graduation})`, backgroundSize: "cover", backgroundPosition: "center" }} />
           <div className="relative grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-display text-4xl md:text-5xl font-bold text-cream">Your future starts with one click.</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-cream">Your future starts with one click.</h2>
               <p className="mt-4 text-cream/85">Create your account in under 60 seconds. Free preview of every course.</p>
             </div>
             <div className="flex md:justify-end gap-3 flex-wrap">

@@ -96,22 +96,19 @@ export function DashboardPerformanceChart({ role }: { role: UserRole }) {
   const data = useMemo(() => points, [points]);
 
   return (
-    <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft md:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <DashboardSectionTitle
-          title={config.title}
-          description={config.description}
-        />
+    <section className="rounded-lg border bg-card p-5 md:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <DashboardSectionTitle title={config.title} />
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="inline-flex rounded-xl border border-border/80 bg-muted/30 p-1">
+          <div className="inline-flex rounded-md border bg-muted/50 p-1">
             {config.metrics.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => setMetric(item.key)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   metric === item.key
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
@@ -121,7 +118,7 @@ export function DashboardPerformanceChart({ role }: { role: UserRole }) {
               </button>
             ))}
           </div>
-          <div className="inline-flex rounded-xl border border-border/80 bg-muted/30 p-1">
+          <div className="inline-flex rounded-md border bg-muted/50 p-1">
             {(
               [
                 { key: "30d" as RangeKey, label: "Last 30 days" },
@@ -133,9 +130,9 @@ export function DashboardPerformanceChart({ role }: { role: UserRole }) {
                 type="button"
                 onClick={() => setRange(item.key)}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   range === item.key
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -161,32 +158,32 @@ export function DashboardPerformanceChart({ role }: { role: UserRole }) {
             <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
               <defs>
                 <linearGradient id="dashboardArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.42 0.18 25)" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="oklch(0.42 0.18 25)" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="oklch(0.42 0.18 25)" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="oklch(0.42 0.18 25)" stopOpacity={0.01} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.9 0.015 70)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.922 0 0)" />
               <XAxis
                 dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 fontSize={11}
                 tickMargin={8}
-                stroke="oklch(0.55 0.02 40)"
+                stroke="oklch(0.556 0 0)"
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 fontSize={11}
                 tickMargin={8}
-                stroke="oklch(0.55 0.02 40)"
+                stroke="oklch(0.556 0 0)"
                 allowDecimals={false}
               />
               <Tooltip
                 contentStyle={{
-                  borderRadius: "12px",
-                  border: "1px solid oklch(0.9 0.015 70)",
-                  boxShadow: "0 8px 30px -10px oklch(0.2 0.02 30 / 0.18)",
+                  borderRadius: "8px",
+                  border: "1px solid oklch(0.922 0 0)",
+                  boxShadow: "0 1px 2px 0 oklch(0 0 0 / 0.05)",
                 }}
                 formatter={(value: number) => [value, metricLabels[metric]]}
               />
@@ -194,7 +191,7 @@ export function DashboardPerformanceChart({ role }: { role: UserRole }) {
                 type="monotone"
                 dataKey="value"
                 stroke="oklch(0.42 0.18 25)"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fill="url(#dashboardArea)"
                 dot={false}
                 activeDot={{ r: 5, fill: "oklch(0.42 0.18 25)", strokeWidth: 0 }}

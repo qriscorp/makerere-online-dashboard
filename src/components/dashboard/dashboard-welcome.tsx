@@ -1,15 +1,10 @@
 import { useAuth } from "@/lib/auth-context";
-import { cn } from "@/lib/utils";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
-}
-
-function formatRole(role: string): string {
-  return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function getFirstName(fullName: string): string {
@@ -22,37 +17,23 @@ export function DashboardWelcome() {
   const firstName = getFirstName(user.name);
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-[oklch(0.97_0.02_75)] p-6 shadow-soft md:p-8">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-primary/5 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-10 right-24 h-32 w-32 rounded-full bg-[oklch(0.78_0.14_80)]/10 blur-2xl" />
-
-      <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
-            {formatRole(user.role)} Portal
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            {greeting},{" "}
-            <span className="text-primary">{firstName}</span>
+    <section className="rounded-lg border bg-card px-6 py-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+            {greeting}, {firstName}
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            Welcome back to Makerere Online. Here is a snapshot of your academic activity
-            and platform performance today.
+          <p className="text-sm text-muted-foreground">
+            Here&apos;s what&apos;s happening on your dashboard today.
           </p>
         </div>
-
-        <div className="flex flex-wrap gap-2 md:justify-end">
-          <span className="inline-flex items-center rounded-full border border-border/80 bg-background/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-            {new Date().toLocaleDateString("en-UG", {
-              weekday: "long",
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
-          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary">
-            Semester active
-          </span>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {new Date().toLocaleDateString("en-UG", {
+            weekday: "long",
+            month: "short",
+            day: "numeric",
+          })}
+        </p>
       </div>
     </section>
   );
@@ -70,10 +51,10 @@ export function DashboardSectionTitle({
   className,
 }: DashboardSectionTitleProps) {
   return (
-    <div className={cn("space-y-1", className)}>
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+    <div className={className}>
+      <h2 className="text-base font-semibold tracking-tight">{title}</h2>
       {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
       )}
     </div>
   );

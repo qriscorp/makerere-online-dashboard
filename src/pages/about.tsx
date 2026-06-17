@@ -13,7 +13,7 @@ export default function About() {
         <div className="relative container-tight h-full flex items-end pb-14">
           <div className="max-w-3xl">
             <span className="text-xs uppercase tracking-[0.25em] text-gold">About us</span>
-            <h1 className="mt-3 font-display text-5xl md:text-6xl font-bold text-cream">
+            <h1 className="mt-3 text-5xl md:text-6xl font-bold text-cream">
               A 100-year tradition,<br />reimagined for the cloud.
             </h1>
           </div>
@@ -23,7 +23,7 @@ export default function About() {
       <section className="container-tight py-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Our story</span>
-          <h2 className="mt-3 font-display text-4xl font-bold">Education, without the gate.</h2>
+          <h2 className="mt-3 text-4xl font-bold">Education, without the gate.</h2>
           <div className="mt-6 space-y-4 text-muted-foreground leading-relaxed">
             <p>Makerere Online School was born from a simple frustration: too many brilliant minds locked out of higher education by geography, cost, or circumstance.</p>
             <p>We took the best of a great university — rigorous courses, expert teachers, real exams, real certificates — and rebuilt it for the device in your pocket.</p>
@@ -45,7 +45,7 @@ export default function About() {
                 <span className="grid place-items-center h-12 w-12 rounded-xl bg-primary/10 text-primary">
                   <v.icon className="h-6 w-6" />
                 </span>
-                <h3 className="mt-5 font-display text-2xl font-bold">{v.t}</h3>
+                <h3 className="mt-5 text-2xl font-bold">{v.t}</h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{v.d}</p>
               </div>
             ))}
@@ -57,7 +57,7 @@ export default function About() {
         <img src={lab} alt="Lab" loading="lazy" className="rounded-2xl shadow-elegant md:order-2" />
         <div className="md:order-1">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">By the numbers</span>
-          <h2 className="mt-3 font-display text-4xl font-bold">Small platform. Big impact.</h2>
+          <h2 className="mt-3 text-4xl font-bold">Small platform. Big impact.</h2>
           <dl className="mt-8 grid grid-cols-2 gap-6">
             {[
               { k: "24,800+", v: "Active students" },
@@ -66,7 +66,7 @@ export default function About() {
               { k: "12", v: "Countries reached" },
             ].map((s) => (
               <div key={s.v} className="rounded-xl border border-border p-5 bg-card">
-                <dt className="font-display text-3xl md:text-4xl font-bold text-primary">{s.k}</dt>
+                <dt className="text-3xl md:text-4xl font-bold text-primary">{s.k}</dt>
                 <dd className="mt-1 text-sm text-muted-foreground">{s.v}</dd>
               </div>
             ))}
@@ -78,7 +78,7 @@ export default function About() {
         <div className="container-tight">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Leadership</span>
-            <h2 className="mt-3 font-display text-4xl font-bold">Guided by educators, built by engineers.</h2>
+            <h2 className="mt-3 text-4xl font-bold">Guided by educators, built by engineers.</h2>
           </div>
           <div className="mt-12 grid sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[
@@ -88,7 +88,7 @@ export default function About() {
               { n: "Eng. James Kato", r: "Director, Online Programs" },
             ].map((p) => (
               <div key={p.n} className="rounded-2xl bg-card border border-border p-6 text-center shadow-soft">
-                <div className="mx-auto h-20 w-20 rounded-full bg-gold-gradient grid place-items-center font-display text-2xl font-bold text-[oklch(0.2_0.03_40)]">
+                <div className="mx-auto h-20 w-20 rounded-full bg-gold-gradient grid place-items-center text-2xl font-bold text-[oklch(0.2_0.03_40)]">
                   {p.n.split(" ").map(s => s[0]).slice(0,2).join("")}
                 </div>
                 <h3 className="mt-4 font-semibold">{p.n}</h3>
@@ -105,7 +105,7 @@ export default function About() {
           <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.16_0.02_30)]/90 to-transparent" />
           <div className="relative h-full flex items-center p-10 md:p-16">
             <div className="max-w-lg">
-              <h2 className="font-display text-4xl font-bold text-cream">Pro Futuro Aedificamus.</h2>
+              <h2 className="text-4xl font-bold text-cream">Pro Futuro Aedificamus.</h2>
               <p className="mt-3 text-cream/85">"We build for the future." That's not a tagline — it's a promise to every student who trusts us with their tomorrow.</p>
             </div>
           </div>

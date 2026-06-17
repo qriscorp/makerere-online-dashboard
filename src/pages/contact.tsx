@@ -16,7 +16,7 @@ export default function Contact() {
       <section className="bg-hero-gradient py-20">
         <div className="container-tight">
           <span className="text-xs uppercase tracking-[0.25em] text-gold">Contact</span>
-          <h1 className="mt-3 font-display text-5xl md:text-6xl font-bold text-cream max-w-3xl">We'd love to hear from you.</h1>
+          <h1 className="mt-3 text-5xl md:text-6xl font-bold text-cream max-w-3xl">We'd love to hear from you.</h1>
           <p className="mt-5 text-cream/80 max-w-xl">Questions about a course, partnerships, or technical support — we usually reply within a day.</p>
         </div>
       </section>

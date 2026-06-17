@@ -57,6 +57,11 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
+                      className={
+                        isActive
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-primary-foreground"
+                          : undefined
+                      }
                     >
                       <Link to={item.href}>
                         <item.icon />

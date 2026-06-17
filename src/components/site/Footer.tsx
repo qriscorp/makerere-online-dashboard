@@ -49,7 +49,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-tight py-5 flex flex-col md:flex-row gap-3 items-center justify-between text-xs text-cream/60">
           <p>© {new Date().getFullYear()} Makerere Online School. All rights reserved.</p>
-          <p className="font-display italic text-gold">Pro Futuro Aedificamus — We build for the future</p>
+          <p className="italic text-gold">Pro Futuro Aedificamus — We build for the future</p>
         </div>
       </div>
     </footer>

@@ -45,10 +45,10 @@ export default function Login() {
         <div className="absolute inset-0 bg-hero-gradient opacity-85" />
         <div className="relative h-full flex items-end p-12">
           <div className="max-w-md text-cream">
-            <p className="font-display italic text-gold text-sm">
+            <p className="italic text-gold text-sm">
               Pro Futuro Aedificamus
             </p>
-            <h2 className="mt-3 font-display text-4xl font-bold leading-tight">
+            <h2 className="mt-3 text-4xl font-bold leading-tight">
               Welcome back to your university — wherever you are.
             </h2>
             <p className="mt-4 text-cream/80">
@@ -61,7 +61,7 @@ export default function Login() {
 
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md">
-          <h1 className="font-display text-3xl font-bold">Sign in</h1>
+          <h1 className="text-3xl font-bold">Sign in</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter your credentials to continue. Your role will be detected
             automatically.
