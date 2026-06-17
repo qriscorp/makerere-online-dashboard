@@ -17,14 +17,34 @@ A comprehensive web-based university management platform built with React, desig
 
 ## Getting Started
 
+### Local development (recommended)
+
+1. Start the API and database:
+
 ```bash
-npm install
-npm run dev        # Development server on port 8080
-npm run build      # Production build
-npm run preview    # Preview production build
+cd ../makerere-online-api
+docker compose up --build -d
 ```
 
-### Docker
+2. Configure the dashboard to use the local API:
+
+```bash
+cp .env.example .env   # VITE_API_URL=http://localhost:3434
+npm install
+npm run dev            # http://localhost:8080
+```
+
+### Full stack with Docker
+
+From the project root (`makerere project/`):
+
+```bash
+docker compose up --build -d
+# Dashboard: http://localhost:3535
+# API:       http://localhost:3434
+```
+
+Or dashboard only (expects API already running on port 3434):
 
 ```bash
 docker compose up --build -d
@@ -303,3 +323,20 @@ docker compose up --build -d
 # Domain: https://makerereonlineschool.com
 # API: https://api.makerereonlineschool.com
 ```
+docker build --build-arg VITE_API_URL=https://api.makerereonlineschool.com  
+
+
+Role	Email	Name
+super_admin
+superadmin@makonline.com
+Super Administrator
+admin
+admin@makonline.com
+Platform Admin
+lecturer
+firstlecturer@makonline.com
+Dr. Okello James
+student
+firststudent@makonline.com
+Aisha Nansubuga
+All four use the same default password: 123456789.

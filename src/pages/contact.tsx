@@ -1,6 +1,16 @@
+import { useState } from "react";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 export default function Contact() {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    notify.success("Message sent", {
+      description: "Thanks — we'll be in touch shortly.",
+    });
+    e.currentTarget.reset();
+  };
+
   return (
     <>
       <section className="bg-hero-gradient py-20">
@@ -33,7 +43,7 @@ export default function Contact() {
 
         <form
           className="md:col-span-3 rounded-2xl border border-border bg-card p-8 shadow-soft space-y-5"
-          onSubmit={(e) => { e.preventDefault(); alert("Thanks — we'll be in touch shortly."); }}
+          onSubmit={handleSubmit}
         >
           <div className="grid sm:grid-cols-2 gap-5">
             <label className="block">

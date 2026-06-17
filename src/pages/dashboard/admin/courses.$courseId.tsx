@@ -23,6 +23,7 @@ import {
   type ApiEnrollment,
   resolveImageUrl,
 } from "@/lib/api";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,11 @@ export default function DashboardCourseDetail() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [savingImage, setSavingImage] = useState(false);
+
+  // Remove unit confirmation
+  const [removeUnitOpen, setRemoveUnitOpen] = useState(false);
+  const [removingUnit, setRemovingUnit] = useState<ApiCourseUnit | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     if (!courseId) return;
@@ -137,15 +143,20 @@ export default function DashboardCourseDetail() {
     }
   }
 
-  async function handleRemoveUnit(unitId: string) {
-    if (!courseId) return;
+  async function handleRemoveUnit() {
+    if (!courseId || !removingUnit) return;
     try {
-      const remainingIds = courseUnits.map((u) => u.id).filter((id) => id !== unitId);
+      setRemoving(true);
+      const remainingIds = courseUnits.map((u) => u.id).filter((id) => id !== removingUnit.id);
       await api.updateCourse(courseId, { unit_ids: remainingIds });
       toast.success("Unit removed");
+      setRemoveUnitOpen(false);
+      setRemovingUnit(null);
       await loadData();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to remove unit");
+    } finally {
+      setRemoving(false);
     }
   }
 
@@ -353,7 +364,10 @@ export default function DashboardCourseDetail() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveUnit(unit.id)}
+                        onClick={() => {
+                          setRemovingUnit(unit);
+                          setRemoveUnitOpen(true);
+                        }}
                       >
                         <X className="h-4 w-4 text-destructive" />
                       </Button>
@@ -470,6 +484,16 @@ export default function DashboardCourseDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={removeUnitOpen}
+        onOpenChange={setRemoveUnitOpen}
+        title="Remove course unit"
+        description={`Are you sure you want to remove "${removingUnit?.title}" from this course?`}
+        confirmLabel="Remove"
+        onConfirm={handleRemoveUnit}
+        loading={removing}
+      />
     </div>
   );
 }

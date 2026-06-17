@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { ApiCertificateVerification } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import crest from "@/assets/makerere-logo.png";
 import { Search, ShieldCheck, ShieldX, Loader2 } from "lucide-react";
 
@@ -16,7 +17,10 @@ export default function CertificateVerification() {
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (!serialNumber.trim()) return;
+    if (!serialNumber.trim()) {
+      notify.error("Enter a certificate number");
+      return;
+    }
 
     setIsLoading(true);
     setResult(null);
@@ -25,12 +29,19 @@ export default function CertificateVerification() {
       const data = await api.verifyCertificate(serialNumber.trim());
       if (data.valid || data.student_name) {
         setResult({ type: "found", data });
+        notify.success("Certificate verified", {
+          description: "This certificate is authentic.",
+        });
       } else {
         setResult({ type: "not-found" });
+        notify.error("Certificate not found", {
+          description: "No matching certificate was found for this number.",
+        });
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Verification failed";
       setResult({ type: "error", message });
+      notify.error("Verification failed", { description: message });
     } finally {
       setIsLoading(false);
     }

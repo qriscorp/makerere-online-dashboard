@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import heroCampus from "@/assets/hero-campus.jpg";
 
@@ -19,24 +19,30 @@ export default function GetStarted() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      const message = "Passwords do not match";
+      setError(message);
+      notify.error(message);
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      const message = "Password must be at least 6 characters";
+      setError(message);
+      notify.error(message);
       return;
     }
 
     setLoading(true);
     try {
       await register(name, email, password);
-      toast.success("Account created successfully!");
+      notify.success("Account created successfully!", {
+        description: "Welcome to Makerere Online.",
+      });
       navigate("/dashboard");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Registration failed";
       setError(message);
-      toast.error(message);
+      notify.error("Registration failed", { description: message });
     } finally {
       setLoading(false);
     }

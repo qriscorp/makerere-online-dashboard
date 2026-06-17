@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import heroCampus from "@/assets/hero-campus.jpg";
 
@@ -19,13 +19,15 @@ export default function Login() {
 
     try {
       await login(email, password);
-      toast.success("Welcome back!");
+      notify.success("Welcome back!", {
+        description: "You have signed in successfully.",
+      });
       navigate("/dashboard");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Login failed";
       setError(message);
-      toast.error(message);
+      notify.error("Sign in failed", { description: message });
     } finally {
       setLoading(false);
     }

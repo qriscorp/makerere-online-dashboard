@@ -1,6 +1,9 @@
 services:
   makerere-dashboard:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_API_URL: http://localhost:3434
     ports:
       - "3535:3535"
     restart: unless-stopped

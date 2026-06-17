@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import type { UserRole } from "@/lib/types";
@@ -19,6 +20,7 @@ export interface AuthUser {
 export interface AuthContextValue {
   user: AuthUser;
   setRole: (role: UserRole) => void;
+  updateUser: (user: AuthUser) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
@@ -107,9 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("user", JSON.stringify(updated));
   };
 
+  const updateUser = useCallback((updated: AuthUser) => {
+    setUser(updated);
+    localStorage.setItem("user", JSON.stringify(updated));
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, setRole, login, register, logout, isAuthenticated, isLoading }}
+      value={{ user, setRole, updateUser, login, register, logout, isAuthenticated, isLoading }}
     >
       {children}
     </AuthContext.Provider>

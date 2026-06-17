@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-import { api, type ApiMaterial, type ApiCourseUnit } from "@/lib/api";
+import { api, resolveImageUrl, type ApiMaterial, type ApiCourseUnit } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
@@ -242,10 +242,8 @@ export default function LecturerMaterials() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                const url = material.file_url.startsWith("/")
-                                  ? `${import.meta.env.VITE_API_URL || "https://api.makerereonlineschool.com"}${material.file_url}`
-                                  : material.file_url;
-                                window.open(url, "_blank");
+                                const url = resolveImageUrl(material.file_url);
+                                if (url) window.open(url, "_blank");
                               }}
                             >
                               <Download className="h-4 w-4" />

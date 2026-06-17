@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { getNavigationItems } from "@/lib/navigation";
 import { mockNotifications } from "@/lib/mock-data";
+import { SidebarUserAccount } from "@/components/dashboard/user-account-menu";
 import makereLogo from "@/assets/makerere-logo.png";
 import {
   Sidebar,
@@ -77,25 +78,8 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-            {user.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate">{user.name}</span>
-              <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground capitalize w-fit">
-                {user.role.replace("_", " ")}
-              </span>
-            </div>
-          )}
-        </div>
+      <SidebarFooter className="p-2">
+        <SidebarUserAccount collapsed={isCollapsed} />
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bell, LogOut } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { Bell } from "lucide-react";
+import { HeaderUserAccount } from "@/components/dashboard/user-account-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -31,7 +31,6 @@ function buildBreadcrumbs(pathname: string) {
 }
 
 export function DashboardHeader() {
-  const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const crumbs = buildBreadcrumbs(pathname);
@@ -58,8 +57,12 @@ export function DashboardHeader() {
       </Breadcrumb>
 
       <div className="flex items-center gap-2">
-        {/* Notification Bell */}
-        <Button variant="ghost" size="icon" className="relative h-8 w-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 rounded-lg"
+          onClick={() => navigate("/dashboard/notifications")}
+        >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
@@ -69,16 +72,7 @@ export function DashboardHeader() {
           <span className="sr-only">Notifications</span>
         </Button>
 
-        {/* Logout */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => { logout(); navigate("/login"); }}
-        >
-          <LogOut className="h-4 w-4" />
-          <span className="sr-only">Sign out</span>
-        </Button>
+        <HeaderUserAccount />
       </div>
     </header>
   );

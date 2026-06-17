@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://api.makerereonlineschool.com";
+  import.meta.env.VITE_API_URL || "http://localhost:3434";
 
 /**
  * Resolves a relative upload path (e.g. /uploads/abc.jpg) to the full URL.
@@ -8,7 +8,7 @@ const API_BASE_URL =
 export function resolveImageUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  if (path.startsWith("/uploads/")) return `${API_BASE_URL}${path}`;
+  if (path.startsWith("/")) return `${API_BASE_URL}${path}`;
   return path;
 }
 
@@ -241,6 +241,10 @@ async function request<T>(
     throw new Error(error.detail);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json();
 }
 
@@ -280,6 +284,21 @@ export const api = {
     }),
 
   getMe: () => request<ApiUser>("/api/auth/me"),
+
+  updateProfile: (data: { name?: string; email?: string }) =>
+    request<ApiUser>("/api/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>("/api/auth/me/password", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    }),
 
   // User management
   getUsers: () => request<ApiUser[]>("/api/users"),
