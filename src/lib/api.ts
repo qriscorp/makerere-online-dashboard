@@ -235,10 +235,17 @@ async function request<T>(
   });
 
   if (!res.ok) {
-    const error: ApiError = await res.json().catch(() => ({
+    const body = await res.json().catch(() => ({
       detail: "An unexpected error occurred",
     }));
-    throw new Error(error.detail);
+    const detail = body.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((e: { msg?: string }) => e.msg ?? "Validation error").join(", ")
+          : "An unexpected error occurred";
+    throw new Error(message);
   }
 
   if (res.status === 204) {
