@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Plus, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 import { api, type ApiIntake, type ApiCourse } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,12 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 type IntakeFormData = {
   name: string;
@@ -52,6 +48,7 @@ const emptyForm: IntakeFormData = {
 
 export default function DashboardIntakes() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isSuperAdmin = user.role === "super_admin";
 
   const [intakes, setIntakes] = useState<ApiIntake[]>([]);
@@ -66,6 +63,7 @@ export default function DashboardIntakes() {
   const [formData, setFormData] = useState<IntakeFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -80,7 +78,7 @@ export default function DashboardIntakes() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load data";
       setError(message);
-      toast.error(message);
+      notify.error("Failed to load intakes", { description: message });
     } finally {
       setLoading(false);
     }
@@ -208,23 +206,32 @@ export default function DashboardIntakes() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      notify.error("Please fix the form errors");
+      return;
+    }
 
     setSubmitting(true);
     try {
       if (editingIntake) {
         const updated = await api.updateIntake(editingIntake.id, formData);
         setIntakes((prev) => prev.map((i) => (i.id === editingIntake.id ? updated : i)));
-        toast.success("Intake updated successfully");
+        notify.success("Intake updated successfully", {
+          description: `${formData.name} has been updated.`,
+        });
       } else {
         const created = await api.createIntake(formData);
         setIntakes((prev) => [created, ...prev]);
-        toast.success("Intake created successfully");
+        notify.success("Intake created successfully", {
+          description: `${formData.name} is now available.`,
+        });
       }
       setFormOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Operation failed";
-      toast.error(message);
+      notify.error(editingIntake ? "Failed to update intake" : "Failed to create intake", {
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -234,14 +241,19 @@ export default function DashboardIntakes() {
     if (!deletingIntake) return;
 
     try {
+      setDeleting(true);
       await api.deleteIntake(deletingIntake.id);
       setIntakes((prev) => prev.filter((i) => i.id !== deletingIntake.id));
-      toast.success("Intake deleted successfully");
+      notify.success("Intake deleted successfully", {
+        description: `${deletingIntake.name} has been removed.`,
+      });
       setDeleteOpen(false);
       setDeletingIntake(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Delete failed";
-      toast.error(message);
+      notify.error("Failed to delete intake", { description: message });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -303,26 +315,12 @@ export default function DashboardIntakes() {
           rowActions={(row) => {
             const intake = row as unknown as ApiIntake;
             return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openEditForm(intake)}>
-                    Edit
-                  </DropdownMenuItem>
-                  {isSuperAdmin && (
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => openDeleteDialog(intake)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TableRowActions
+                onView={() => navigate(`/dashboard/intakes/${intake.id}`)}
+                onEdit={() => openEditForm(intake)}
+                onDelete={() => openDeleteDialog(intake)}
+                showDelete={isSuperAdmin}
+              />
             );
           }}
         />
@@ -495,6 +493,7 @@ export default function DashboardIntakes() {
         description={`Are you sure you want to delete "${deletingIntake?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
+        loading={deleting}
         destructive
       />
     </div>

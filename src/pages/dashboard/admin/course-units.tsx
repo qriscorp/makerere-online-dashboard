@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreHorizontal, Plus, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 import { api, type ApiCourseUnit, type ApiUser } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,12 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const courseUnitSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -63,6 +58,7 @@ export default function DashboardCourseUnits() {
   const [formData, setFormData] = useState<CourseUnitFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof CourseUnitFormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -75,7 +71,9 @@ export default function DashboardCourseUnits() {
       setUnits(unitsData);
       setUsers(usersData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      const message = err instanceof Error ? err.message : "Failed to load data";
+      setError(message);
+      notify.error("Failed to load course units", { description: message });
     } finally {
       setLoading(false);
     }
@@ -162,6 +160,7 @@ export default function DashboardCourseUnits() {
         fieldErrors[field] = err.message;
       });
       setErrors(fieldErrors);
+      notify.error("Please fix the form errors");
       return;
     }
 
@@ -177,7 +176,9 @@ export default function DashboardCourseUnits() {
         setUnits((prev) =>
           prev.map((u) => (u.id === editingUnit.id ? updated : u)),
         );
-        toast.success("Course unit updated successfully");
+        notify.success("Course unit updated successfully", {
+          description: `${result.data.title} has been updated.`,
+        });
       } else {
         const created = await api.createCourseUnit({
           title: result.data.title,
@@ -188,15 +189,21 @@ export default function DashboardCourseUnits() {
           status: isLecturer ? "pending_approval" : "active",
         });
         setUnits((prev) => [created, ...prev]);
-        toast.success(
-          isLecturer
-            ? "Course unit submitted for approval"
-            : "Course unit created successfully",
+        notify.success(
+          isLecturer ? "Course unit submitted for approval" : "Course unit created successfully",
+          {
+            description: isLecturer
+              ? `${result.data.title} is awaiting admin approval.`
+              : `${result.data.title} is now available.`,
+          },
         );
       }
       setFormOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Operation failed");
+      const message = err instanceof Error ? err.message : "Operation failed";
+      notify.error(editingUnit ? "Failed to update course unit" : "Failed to create course unit", {
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -205,13 +212,19 @@ export default function DashboardCourseUnits() {
   const handleDelete = async () => {
     if (!deletingUnit) return;
     try {
+      setDeleting(true);
       await api.deleteCourseUnit(deletingUnit.id);
       setUnits((prev) => prev.filter((u) => u.id !== deletingUnit.id));
-      toast.success("Course unit deleted successfully");
+      notify.success("Course unit deleted successfully", {
+        description: `${deletingUnit.title} has been removed.`,
+      });
       setDeleteOpen(false);
       setDeletingUnit(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      const message = err instanceof Error ? err.message : "Delete failed";
+      notify.error("Failed to delete course unit", { description: message });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -219,9 +232,12 @@ export default function DashboardCourseUnits() {
     try {
       const updated = await api.approveCourseUnit(unit.id);
       setUnits((prev) => prev.map((u) => (u.id === unit.id ? updated : u)));
-      toast.success(`"${unit.title}" has been approved`);
+      notify.success("Course unit approved", {
+        description: `"${unit.title}" is now active.`,
+      });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Approve failed");
+      const message = err instanceof Error ? err.message : "Approve failed";
+      notify.error("Failed to approve course unit", { description: message });
     }
   };
 
@@ -229,9 +245,12 @@ export default function DashboardCourseUnits() {
     try {
       const updated = await api.rejectCourseUnit(unit.id);
       setUnits((prev) => prev.map((u) => (u.id === unit.id ? updated : u)));
-      toast.success(`"${unit.title}" has been rejected`);
+      notify.success("Course unit rejected", {
+        description: `"${unit.title}" has been rejected.`,
+      });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Reject failed");
+      const message = err instanceof Error ? err.message : "Reject failed";
+      notify.error("Failed to reject course unit", { description: message });
     }
   };
 
@@ -302,31 +321,13 @@ export default function DashboardCourseUnits() {
                     </Button>
                   </>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate(`/dashboard/course-units/${unit.id}`)}>
-                      View
-                    </DropdownMenuItem>
-                    {isAdmin && (
-                      <DropdownMenuItem onClick={() => openEditForm(unit)}>
-                        Edit
-                      </DropdownMenuItem>
-                    )}
-                    {isSuperAdmin && (
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => openDeleteDialog(unit)}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <TableRowActions
+                  onView={() => navigate(`/dashboard/course-units/${unit.id}`)}
+                  onEdit={() => openEditForm(unit)}
+                  onDelete={() => openDeleteDialog(unit)}
+                  showEdit={isAdmin}
+                  showDelete={isSuperAdmin}
+                />
               </div>
             );
           }}
@@ -426,6 +427,7 @@ export default function DashboardCourseUnits() {
         description={`Are you sure you want to delete "${deletingUnit?.title}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
+        loading={deleting}
         destructive
       />
     </div>

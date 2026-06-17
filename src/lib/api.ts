@@ -309,6 +309,12 @@ export const api = {
       body: JSON.stringify({ name, email, password, role }),
     }),
 
+  updateUser: (userId: string, data: { name?: string; email?: string; role?: string }) =>
+    request<ApiUser>(`/api/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   deleteUser: (userId: string) =>
     request<void>("/api/users/" + userId, { method: "DELETE" }),
 
