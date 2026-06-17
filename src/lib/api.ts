@@ -284,10 +284,32 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  register: (name: string, email: string, password: string, role = "student") =>
-    request<AuthResponse>("/api/auth/register", {
+  register: (name: string, email: string, password: string) =>
+    request<{
+      message: string;
+      email: string;
+      verification_required: boolean;
+      dev_code?: string | null;
+    }>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, email, password }),
+    }),
+
+  verifyEmail: (email: string, code: string) =>
+    request<AuthResponse>("/api/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
+  resendVerification: (email: string) =>
+    request<{
+      message: string;
+      email: string;
+      verification_required: boolean;
+      dev_code?: string | null;
+    }>("/api/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     }),
 
   getMe: () => request<ApiUser>("/api/auth/me"),
@@ -305,6 +327,26 @@ export const api = {
         current_password: currentPassword,
         new_password: newPassword,
       }),
+    }),
+
+  forgotPassword: (email: string) =>
+    request<{ message: string; reset_url?: string | null; email_sent?: boolean }>(
+      "/api/auth/forgot-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      },
+    ),
+
+  validateResetToken: (token: string) =>
+    request<{ valid: boolean; email?: string | null }>(
+      `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
+    ),
+
+  resetPassword: (token: string, newPassword: string) =>
+    request<void>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
     }),
 
   // User management

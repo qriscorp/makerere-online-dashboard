@@ -26,7 +26,18 @@ export interface AuthContextValue {
     name: string,
     email: string,
     password: string,
-  ) => Promise<void>;
+  ) => Promise<{
+    message: string;
+    email: string;
+    verification_required: boolean;
+    dev_code?: string | null;
+  }>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<{
+    message: string;
+    email: string;
+    dev_code?: string | null;
+  }>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -88,12 +99,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
   ) => {
-    const response = await api.register(name, email, password);
+    return api.register(name, email, password);
+  };
+
+  const verifyEmail = async (email: string, code: string) => {
+    const response = await api.verifyEmail(email, code);
     const authUser = apiUserToAuthUser(response.user);
     localStorage.setItem("access_token", response.access_token);
     localStorage.setItem("user", JSON.stringify(authUser));
     setUser(authUser);
     setIsAuthenticated(true);
+  };
+
+  const resendVerification = async (email: string) => {
+    return api.resendVerification(email);
   };
 
   const logout = () => {
@@ -116,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, setRole, updateUser, login, register, logout, isAuthenticated, isLoading }}
+      value={{ user, setRole, updateUser, login, register, verifyEmail, resendVerification, logout, isAuthenticated, isLoading }}
     >
       {children}
     </AuthContext.Provider>
