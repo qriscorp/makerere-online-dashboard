@@ -78,16 +78,14 @@ export default function LecturerAssessmentDetail() {
   async function loadData() {
     try {
       setLoading(true);
-      const [questionsData, submissionsData] = await Promise.all([
+      const [assessmentData, questionsData, submissionsData] = await Promise.all([
+        api.getAssessment(assessmentId!),
         api.getAssessmentQuestions(assessmentId!),
         api.getAssessmentSubmissions(assessmentId!),
       ]);
+      setAssessment(assessmentData);
       setQuestions(questionsData as Question[]);
       setSubmissions(submissionsData as Submission[]);
-
-      // Get assessment info
-      // We need to find it from the course unit — get all assessments and find this one
-      // Simple approach: store assessment info from questions endpoint or get it separately
     } catch {
       toast.error("Failed to load assessment data");
     } finally {

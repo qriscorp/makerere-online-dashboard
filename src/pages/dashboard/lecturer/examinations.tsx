@@ -1,17 +1,10 @@
-import { useState } from "react";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, MoreHorizontal, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
-import type { Examination, ExamType } from "@/lib/types";
-import {
-  mockExaminations,
-  mockCourseUnits,
-  mockEnrollments,
-  mockCourses,
-  mockExamSubmissions,
-} from "@/lib/mock-data";
+import { api, type ApiAssessment, type ApiCourseUnit } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
@@ -38,7 +31,7 @@ import {
 interface ExamFormData {
   title: string;
   courseUnitId: string;
-  type: ExamType | "";
+  type: string;
   instructions: string;
   passMark: number;
   timeLimit: string;
@@ -59,79 +52,92 @@ const emptyForm: ExamFormData = {
   endDate: "",
 };
 
+function isAssessmentActive(assessment: ApiAssessment): boolean {
+  const now = new Date();
+  const start = assessment.start_date ? new Date(assessment.start_date) : null;
+  const end = assessment.end_date ? new Date(assessment.end_date) : null;
+  if (start && now < start) return false;
+  if (end && now > end) return false;
+  return true;
+}
+
+function getTypeBadge(type: string) {
+  switch (type) {
+    case "quiz":
+      return (
+        <Badge className="border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100">
+          Quiz
+        </Badge>
+      );
+    case "assignment":
+      return (
+        <Badge className="border-transparent bg-purple-100 text-purple-800 hover:bg-purple-100">
+          Assignment
+        </Badge>
+      );
+    case "final_exam":
+      return (
+        <Badge className="border-transparent bg-orange-100 text-orange-800 hover:bg-orange-100">
+          Final Exam
+        </Badge>
+      );
+    default:
+      return <Badge variant="secondary">{type}</Badge>;
+  }
+}
+
 export default function DashboardExaminations() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isLecturer = user.role === "lecturer";
   const isStudent = user.role === "student";
 
-  const [exams, setExams] = useState<Examination[]>([...mockExaminations]);
+  const [exams, setExams] = useState<ApiAssessment[]>([]);
+  const [courseUnits, setCourseUnits] = useState<ApiCourseUnit[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [formData, setFormData] = useState<ExamFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
-  // Lecturers see exams for their course units
-  const lecturerUnitIds = mockCourseUnits.filter((u) => u.lecturerId === user.id).map((u) => u.id);
+  const lecturerUnits = isLecturer
+    ? courseUnits.filter((u) => u.lecturer_id === user.id)
+    : courseUnits;
 
-  // Students see exams for their enrolled course units
-  const studentUnitIds = (() => {
-    if (!isStudent) return [];
-    const studentEnrollments = mockEnrollments.filter(
-      (e) => e.studentId === user.id && e.status !== "dropped",
-    );
-    const enrolledCourseIds = studentEnrollments.map((e) => e.courseId).filter(Boolean) as string[];
-    const unitIdsFromCourses = mockCourses
-      .filter((c) => enrolledCourseIds.includes(c.id))
-      .flatMap((c) => c.unitIds);
-    const directUnitIds = studentEnrollments.map((e) => e.courseUnitId).filter(Boolean) as string[];
-    return [...new Set([...unitIdsFromCourses, ...directUnitIds])];
-  })();
+  const displayedExams = isStudent
+    ? exams.filter(isAssessmentActive)
+    : exams;
 
-  const displayedExams = isLecturer
-    ? exams.filter((e) => lecturerUnitIds.includes(e.courseUnitId))
-    : isStudent
-      ? exams.filter((e) => {
-          // Show active exams within date range for enrolled units
-          if (!studentUnitIds.includes(e.courseUnitId)) return false;
-          if (e.status !== "active") return false;
-          return true;
-        })
-      : exams;
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [assessmentsData, unitsData] = await Promise.all([
+        api.getAssessments(),
+        api.getCourseUnits(),
+      ]);
+      setExams(assessmentsData);
+      setCourseUnits(unitsData);
+    } catch {
+      toast.error("Failed to load examinations");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const getCourseUnitName = (unitId: string) => {
-    const unit = mockCourseUnits.find((u) => u.id === unitId);
+    const unit = courseUnits.find((u) => u.id === unitId);
     return unit?.title ?? "Unknown Unit";
   };
 
-  const getTypeBadge = (type: ExamType) => {
-    switch (type) {
-      case "quiz":
-        return (
-          <Badge className="border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100">
-            Quiz
-          </Badge>
-        );
-      case "assignment":
-        return (
-          <Badge className="border-transparent bg-purple-100 text-purple-800 hover:bg-purple-100">
-            Assignment
-          </Badge>
-        );
-      case "final_exam":
-        return (
-          <Badge className="border-transparent bg-orange-100 text-orange-800 hover:bg-orange-100">
-            Final Exam
-          </Badge>
-        );
-    }
-  };
-
-  const columns: ColumnDef<Examination>[] = [
+  const columns: ColumnDef<ApiAssessment>[] = [
     { key: "title", header: "Title" },
     {
-      key: "courseUnitId",
+      key: "course_unit_id",
       header: "Course Unit",
-      render: (row) => getCourseUnitName(row.courseUnitId),
+      render: (row) => getCourseUnitName(row.course_unit_id),
     },
     {
       key: "type",
@@ -139,25 +145,26 @@ export default function DashboardExaminations() {
       render: (row) => getTypeBadge(row.type),
     },
     {
-      key: "endDate",
+      key: "end_date",
       header: "Due Date",
-      render: (row) => format(new Date(row.endDate), "MMM d, yyyy"),
+      render: (row) =>
+        row.end_date ? format(new Date(row.end_date), "MMM d, yyyy") : "—",
     },
     {
-      key: "passMark",
+      key: "pass_mark",
       header: "Pass Mark",
-      render: (row) => `${row.passMark}%`,
+      render: (row) => `${row.pass_mark}%`,
     },
     {
-      key: "timeLimit",
+      key: "time_limit",
       header: "Time Limit",
-      render: (row) => (row.timeLimit ? `${row.timeLimit} min` : "Untimed"),
+      render: (row) => (row.time_limit ? `${row.time_limit} min` : "Untimed"),
     },
     {
       key: "status",
       header: "Status",
       render: (row) =>
-        row.status === "active" ? (
+        isAssessmentActive(row) ? (
           <Badge variant="default">Active</Badge>
         ) : (
           <Badge variant="secondary">Inactive</Badge>
@@ -171,7 +178,7 @@ export default function DashboardExaminations() {
     setFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors: Partial<Record<string, string>> = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.courseUnitId) newErrors.courseUnitId = "Course unit is required";
@@ -184,24 +191,41 @@ export default function DashboardExaminations() {
       return;
     }
 
-    const newExam: Examination = {
-      id: `exam-${Date.now()}`,
-      title: formData.title,
-      courseUnitId: formData.courseUnitId,
-      type: formData.type as ExamType,
-      instructions: formData.instructions,
-      passMark: formData.passMark,
-      timeLimit: formData.timeLimit ? Number(formData.timeLimit) : undefined,
-      maxAttempts: formData.maxAttempts,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      status: "active",
-    };
-
-    setExams((prev) => [...prev, newExam]);
-    toast.success("Exam created successfully");
-    setFormOpen(false);
+    try {
+      await api.createAssessment({
+        course_unit_id: formData.courseUnitId,
+        title: formData.title,
+        type: formData.type,
+        instructions: formData.instructions,
+        pass_mark: formData.passMark,
+        time_limit: formData.timeLimit ? Number(formData.timeLimit) : null,
+        max_attempts: formData.maxAttempts,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+      });
+      toast.success("Exam created successfully");
+      setFormOpen(false);
+      await loadData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create exam");
+    }
   };
+
+  const handleViewDetails = (exam: ApiAssessment) => {
+    if (isStudent) {
+      navigate(`/dashboard/student-assessments/${exam.id}`);
+    } else {
+      navigate(`/dashboard/assessments/${exam.id}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -230,7 +254,7 @@ export default function DashboardExaminations() {
           searchableFields={["title"]}
           searchPlaceholder="Search examinations..."
           rowActions={(row) => {
-            const exam = row as unknown as Examination;
+            const exam = row as unknown as ApiAssessment;
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -239,8 +263,8 @@ export default function DashboardExaminations() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/dashboard/examinations/${exam.id}`)}>
-                    View Details
+                  <DropdownMenuItem onClick={() => handleViewDetails(exam)}>
+                    {isStudent ? "Take Assessment" : "View Details"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -278,7 +302,7 @@ export default function DashboardExaminations() {
                 <SelectValue placeholder="Select course unit" />
               </SelectTrigger>
               <SelectContent>
-                {mockCourseUnits.map((unit) => (
+                {(isLecturer ? lecturerUnits : courseUnits).map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.title}
                   </SelectItem>
@@ -294,7 +318,7 @@ export default function DashboardExaminations() {
             <Label>Type</Label>
             <Select
               value={formData.type}
-              onValueChange={(val) => setFormData((f) => ({ ...f, type: val as ExamType }))}
+              onValueChange={(val) => setFormData((f) => ({ ...f, type: val }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />

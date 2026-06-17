@@ -1,8 +1,7 @@
 import { Clock, Users } from "lucide-react";
 import type { ApiCourse } from "@/lib/api";
-import { resolveImageUrl } from "@/lib/api";
+import { getCourseImageSrc } from "@/lib/course-images";
 import { Badge } from "@/components/ui/badge";
-import makereLogo from "@/assets/makerere-logo.png";
 
 interface CourseCardProps {
   course: ApiCourse;
@@ -26,9 +25,9 @@ export function CourseCard({ course, schoolName, onClick, actionButton, statusBa
       {/* Image */}
       <div className="relative h-40 overflow-hidden bg-muted">
         <img
-          src={resolveImageUrl(course.image_url) || makereLogo}
+          src={getCourseImageSrc(course.image_url, course.title)}
           alt={course.title}
-          className={`h-full w-full ${course.image_url ? "object-cover" : "object-contain p-8 opacity-30"} group-hover:scale-105 transition-transform duration-500`}
+          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         {/* School badge */}
         {schoolName && (

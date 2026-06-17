@@ -469,8 +469,13 @@ export const api = {
     request<void>("/api/materials/" + id, { method: "DELETE" }),
 
   // Assessments
-  getAssessments: (unitId: string) =>
-    request<ApiAssessment[]>("/api/assessments?course_unit_id=" + unitId),
+  getAssessments: (unitId?: string) =>
+    request<ApiAssessment[]>(
+      unitId ? "/api/assessments?course_unit_id=" + unitId : "/api/assessments",
+    ),
+
+  getAssessment: (id: string) =>
+    request<ApiAssessment>("/api/assessments/" + id),
 
   createAssessment: (data: Omit<ApiAssessment, "id" | "created_by" | "created_at">) =>
     request<ApiAssessment>("/api/assessments", {
@@ -562,8 +567,10 @@ export const api = {
     }),
 
   // Virtual Classes
-  getVirtualClasses: (unitId: string) =>
-    request<ApiVirtualClass[]>("/api/virtual-classes?course_unit_id=" + unitId),
+  getVirtualClasses: (unitId?: string) =>
+    request<ApiVirtualClass[]>(
+      unitId ? "/api/virtual-classes?course_unit_id=" + unitId : "/api/virtual-classes",
+    ),
 
   createVirtualClass: (data: Omit<ApiVirtualClass, "id" | "is_live" | "lecturer_id" | "created_at">) =>
     request<ApiVirtualClass>("/api/virtual-classes", {
