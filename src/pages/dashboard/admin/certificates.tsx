@@ -176,7 +176,7 @@ function CertificateDesign({ cert }: { cert: ApiCertificate }) {
 
       <div className="mb-6 flex flex-col items-center gap-3">
         <img src={crest} alt="Makerere Online Logo" className="h-16 w-16 object-contain" />
-        <h2 className="font-display text-xl font-bold tracking-wide" style={{ color: "oklch(0.42 0.18 25)" }}>
+        <h2 className="text-xl font-bold tracking-wide" style={{ color: "oklch(0.42 0.18 25)" }}>
           MAKERERE ONLINE SCHOOL
         </h2>
       </div>
@@ -189,7 +189,7 @@ function CertificateDesign({ cert }: { cert: ApiCertificate }) {
 
       <div className="my-8 space-y-4">
         <p className="text-sm text-gray-500">This is to certify that</p>
-        <p className="font-display text-3xl font-bold" style={{ color: "oklch(0.22 0.08 30)" }}>
+        <p className="text-3xl font-bold" style={{ color: "oklch(0.22 0.08 30)" }}>
           {cert.student_name}
         </p>
         <p className="text-sm text-gray-500">

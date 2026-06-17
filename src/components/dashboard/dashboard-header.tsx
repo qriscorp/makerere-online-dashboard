@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { HeaderUserAccount } from "@/components/dashboard/user-account-menu";
+import { useNotifications } from "@/lib/notifications-context";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -34,9 +35,7 @@ export function DashboardHeader() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const crumbs = buildBreadcrumbs(pathname);
-
-  // Mock unread notification count
-  const unreadCount = 3;
+  const { unreadCount } = useNotifications();
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">

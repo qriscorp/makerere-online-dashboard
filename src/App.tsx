@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Outlet, Link, Navigate } from "react-rout
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { NotificationsProvider } from "@/lib/notifications-context";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -141,17 +142,21 @@ function DashboardLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader />
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <Suspense fallback={<Loading />}>
-            <Outlet />
-          </Suspense>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <NotificationsProvider>
+      <div className="dashboard-shell min-h-svh font-sans antialiased">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <DashboardHeader />
+            <div className="flex-1 overflow-auto p-4 md:p-6">
+              <Suspense fallback={<Loading />}>
+                <Outlet />
+              </Suspense>
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </NotificationsProvider>
   );
 }
 
@@ -161,7 +166,7 @@ function RoleGuard({ allowedRoles, children }: { allowedRoles: UserRole[]; child
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4">
         <div className="max-w-md text-center">
-          <h1 className="font-display text-6xl font-bold text-destructive">403</h1>
+          <h1 className="text-6xl font-bold text-destructive">403</h1>
           <h2 className="mt-4 text-xl font-semibold">Access Denied</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             You don't have permission to access this page.

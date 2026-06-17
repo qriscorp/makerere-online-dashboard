@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Loader2, Mail, RefreshCw } from "lucide-react";
 import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
+import { PasswordInput } from "@/components/ui/password-input";
 import heroCampus from "@/assets/hero-campus.jpg";
 
 type Step = "register" | "verify";
@@ -171,24 +172,22 @@ export default function GetStarted() {
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Password</span>
-                <input
+                <PasswordInput
                   required
-                  type="password"
+                  variant="auth"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min 8 characters"
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Confirm Password</span>
-                <input
+                <PasswordInput
                   required
-                  type="password"
+                  variant="auth"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat password"
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
               <button

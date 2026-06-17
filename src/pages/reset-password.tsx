@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, KeyRound, Loader2 } from "lucide-react";
 import { notify } from "@/lib/notify";
 import { api } from "@/lib/api";
+import { PasswordInput } from "@/components/ui/password-input";
 import heroCampus from "@/assets/hero-campus.jpg";
 
 export default function ResetPassword() {
@@ -116,26 +117,24 @@ export default function ResetPassword() {
               >
                 <label className="block">
                   <span className="text-sm font-medium">New password</span>
-                  <input
+                  <PasswordInput
                     required
-                    type="password"
+                    variant="auth"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 8 characters"
                     autoComplete="new-password"
-                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                   />
                 </label>
                 <label className="block">
                   <span className="text-sm font-medium">Confirm password</span>
-                  <input
+                  <PasswordInput
                     required
-                    type="password"
+                    variant="auth"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
                     autoComplete="new-password"
-                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                   />
                 </label>
                 <button

@@ -16,6 +16,7 @@ import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -362,9 +363,8 @@ export default function DashboardAdmins() {
           {!editingUser && (
             <div className="space-y-2">
               <Label htmlFor="user-password">Password</Label>
-              <Input
+              <PasswordInput
                 id="user-password"
-                type="password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData((f) => ({ ...f, password: e.target.value }))

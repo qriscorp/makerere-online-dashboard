@@ -47,7 +47,7 @@ export function CourseCard({ course, schoolName, onClick, actionButton, statusBa
 
       {/* Content */}
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display text-base font-semibold leading-tight line-clamp-2">
+        <h3 className="text-base font-semibold leading-tight line-clamp-2">
           {course.title}
         </h3>
 

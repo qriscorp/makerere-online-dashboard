@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
+import { useNotifications } from "@/lib/notifications-context";
 import { getNavigationItems } from "@/lib/navigation";
-import { mockNotifications } from "@/lib/mock-data";
 import { SidebarUserAccount } from "@/components/dashboard/user-account-menu";
 import makereLogo from "@/assets/makerere-logo.png";
 import {
@@ -24,11 +24,7 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const navGroups = getNavigationItems(user.role);
   const isCollapsed = state === "collapsed";
-
-  // Count unread notifications for the current user
-  const unreadCount = mockNotifications.filter(
-    (n) => n.userId === user.id && !n.isRead,
-  ).length;
+  const { unreadCount } = useNotifications();
 
   return (
     <Sidebar collapsible="icon">
