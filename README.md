@@ -337,6 +337,6 @@ lecturer
 firstlecturer@makonline.com
 Dr. Okello James
 student
-firststudent@makonline.com
+polarismosh@gmail.com
 Aisha Nansubuga
 All four use the same default password: 123456789.

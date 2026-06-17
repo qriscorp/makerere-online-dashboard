@@ -16,6 +16,8 @@ const Features = React.lazy(() => import("@/pages/features"));
 const Courses = React.lazy(() => import("@/pages/courses"));
 const CourseDetail = React.lazy(() => import("@/pages/courses.$courseId"));
 const Login = React.lazy(() => import("@/pages/login"));
+const ForgotPassword = React.lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = React.lazy(() => import("@/pages/reset-password"));
 const GetStarted = React.lazy(() => import("@/pages/get-started"));
 const CertificateVerification = React.lazy(
   () => import("@/pages/certificate-verification"),
@@ -234,6 +236,8 @@ export default function App() {
           <Route path="courses" element={<Courses />} />
           <Route path="courses/:courseId" element={<CourseDetail />} />
           <Route path="login" element={<Login />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="get-started" element={<GetStarted />} />
           <Route
             path="certificate-verification"
