@@ -1,13 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import { BookOpen, Clock, CreditCard, Users, Loader2 } from "lucide-react";
 
-import { api, ApiEnrollment, ApiIntake, ApiCourse } from "@/lib/api";
+import {
+  api,
+  ApiEnrollment,
+  ApiIntake,
+  ApiCourse,
+  ApiUser,
+} from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
+import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
+import { EntityViewDialog } from "@/components/dashboard/entity-view-dialog";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 function formatUGX(amount: number): string {
   return `UGX ${amount.toLocaleString()}`;
@@ -27,25 +38,57 @@ function formatUGX(amount: number): string {
 // ─── Admin View ────────────────────────────────────────────────────────────────
 
 function AdminEnrollmentView() {
+  const { user } = useAuth();
+  const isSuperAdmin = user.role === "super_admin";
+
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [enrollments, setEnrollments] = useState<ApiEnrollment[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [intakes, setIntakes] = useState<ApiIntake[]>([]);
+  const [courses, setCourses] = useState<ApiCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [viewOpen, setViewOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [viewing, setViewing] = useState<ApiEnrollment | null>(null);
+  const [editing, setEditing] = useState<ApiEnrollment | null>(null);
+  const [deleting, setDeleting] = useState<ApiEnrollment | null>(null);
+  const [formData, setFormData] = useState({ status: "active", payment_status: "completed" });
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingLoading, setDeletingLoading] = useState(false);
+
   useEffect(() => {
-    loadEnrollments();
+    loadData();
   }, []);
 
-  const loadEnrollments = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await api.getEnrollments();
-      setEnrollments(data);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load enrollments");
+      const [enrollmentData, usersData, intakesData, coursesData] = await Promise.all([
+        api.getEnrollments(),
+        api.getUsers(),
+        api.getIntakes(),
+        api.getCourses(),
+      ]);
+      setEnrollments(enrollmentData);
+      setUsers(usersData);
+      setIntakes(intakesData);
+      setCourses(coursesData);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load enrollments";
+      notify.error("Failed to load enrollments", { description: message });
     } finally {
       setLoading(false);
     }
   };
+
+  const getStudentName = (id: string) =>
+    users.find((u) => u.id === id)?.name ?? id.slice(0, 8) + "…";
+  const getIntakeName = (id: string) =>
+    intakes.find((i) => i.id === id)?.name ?? id.slice(0, 8) + "…";
+  const getCourseName = (id: string) =>
+    courses.find((c) => c.id === id)?.title ?? id.slice(0, 8) + "…";
 
   const formatDate = (dateStr: string) => {
     try {
@@ -107,13 +150,18 @@ function AdminEnrollmentView() {
   const columns: ColumnDef<ApiEnrollment>[] = [
     {
       key: "student_id",
-      header: "Student ID",
-      render: (row) => <span className="font-mono text-xs">{row.student_id.slice(0, 8)}...</span>,
+      header: "Student",
+      render: (row) => getStudentName(row.student_id),
     },
     {
       key: "intake_id",
-      header: "Intake ID",
-      render: (row) => <span className="font-mono text-xs">{row.intake_id.slice(0, 8)}...</span>,
+      header: "Intake",
+      render: (row) => getIntakeName(row.intake_id),
+    },
+    {
+      key: "course_id",
+      header: "Course",
+      render: (row) => getCourseName(row.course_id),
     },
     {
       key: "enrollment_date",
@@ -131,6 +179,55 @@ function AdminEnrollmentView() {
       render: (row) => getPaymentBadge(row.payment_status),
     },
   ];
+
+  const openView = (row: ApiEnrollment) => {
+    setViewing(row);
+    setViewOpen(true);
+  };
+
+  const openEdit = (row: ApiEnrollment) => {
+    setEditing(row);
+    setFormData({ status: row.status, payment_status: row.payment_status });
+    setFormOpen(true);
+  };
+
+  const openDelete = (row: ApiEnrollment) => {
+    setDeleting(row);
+    setDeleteOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editing) return;
+    try {
+      setSubmitting(true);
+      await api.updateEnrollment(editing.id, formData);
+      notify.success("Enrollment updated successfully");
+      setFormOpen(false);
+      await loadData();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update enrollment";
+      notify.error("Failed to update enrollment", { description: message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      setDeletingLoading(true);
+      await api.deleteEnrollment(deleting.id);
+      notify.success("Enrollment deleted successfully");
+      setDeleteOpen(false);
+      setDeleting(null);
+      await loadData();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete enrollment";
+      notify.error("Failed to delete enrollment", { description: message });
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -169,11 +266,109 @@ function AdminEnrollmentView() {
         <DataTable<Record<string, unknown>>
           columns={columns as unknown as ColumnDef<Record<string, unknown>>[]}
           data={filteredEnrollments as unknown as Record<string, unknown>[]}
-          searchableFields={["student_id"]}
+          searchableFields={["student_id", "intake_id", "course_id"]}
           searchPlaceholder="Search enrollments..."
           emptyMessage="No enrollments found."
+          rowActions={(row) => {
+            const enrollment = row as unknown as ApiEnrollment;
+            return (
+              <TableRowActions
+                onView={() => openView(enrollment)}
+                onEdit={() => openEdit(enrollment)}
+                onDelete={() => openDelete(enrollment)}
+                showDelete={isSuperAdmin}
+              />
+            );
+          }}
         />
       </div>
+
+      <EntityViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        title="Enrollment details"
+        fields={
+          viewing
+            ? [
+                { label: "Student", value: getStudentName(viewing.student_id) },
+                { label: "Intake", value: getIntakeName(viewing.intake_id) },
+                { label: "Course", value: getCourseName(viewing.course_id) },
+                {
+                  label: "Enrollment Date",
+                  value: formatDate(viewing.enrollment_date),
+                },
+                { label: "Status", value: getStatusBadge(viewing.status) },
+                {
+                  label: "Payment Status",
+                  value: getPaymentBadge(viewing.payment_status),
+                },
+              ]
+            : []
+        }
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title="Edit Enrollment"
+        description="Update enrollment and payment status."
+        onSubmit={handleUpdate}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(val) => setFormData((f) => ({ ...f, status: val }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="payment_pending">Payment Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="dropped">Dropped</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Payment Status</Label>
+            <Select
+              value={formData.payment_status}
+              onValueChange={(val) =>
+                setFormData((f) => ({ ...f, payment_status: val }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {submitting && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Updating...
+            </div>
+          )}
+        </div>
+      </EntityFormDialog>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Enrollment"
+        description={`Remove enrollment for ${deleting ? getStudentName(deleting.student_id) : "this student"}? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        loading={deletingLoading}
+        destructive
+      />
     </div>
   );
 }
