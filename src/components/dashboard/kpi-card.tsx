@@ -118,7 +118,7 @@ export function KpiCard({
         )}
       </div>
 
-      <div className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground">
+      <div className="mt-4 text-3xl font-bold tracking-tight text-foreground">
         {value}
       </div>
 

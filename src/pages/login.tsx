@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
+import { PasswordInput } from "@/components/ui/password-input";
 import heroCampus from "@/assets/hero-campus.jpg";
 
 export default function Login() {
@@ -88,13 +89,12 @@ export default function Login() {
             </label>
             <label className="block">
               <span className="text-sm font-medium">Password</span>
-              <input
+              <PasswordInput
                 required
-                type="password"
+                variant="auth"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </label>
             <div className="flex items-center justify-between text-xs">

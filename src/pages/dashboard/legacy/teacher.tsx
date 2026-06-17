@@ -13,7 +13,7 @@ export default function TeacherDash() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">Teacher portal</p>
-          <h1 className="mt-1 font-display text-3xl md:text-4xl font-bold">Welcome back, Prof. Okello</h1>
+          <h1 className="mt-1 text-3xl md:text-4xl font-bold">Welcome back, Prof. Okello</h1>
           <p className="mt-1 text-sm text-muted-foreground">You have 2 live sessions today and 18 papers awaiting your review.</p>
         </div>
         <div className="flex gap-2">
@@ -30,7 +30,7 @@ export default function TeacherDash() {
         {stats.map((s) => (
           <div key={s.l} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <s.i className="h-5 w-5 text-primary" />
-            <div className="mt-3 font-display text-3xl font-bold">{s.v}</div>
+            <div className="mt-3 text-3xl font-bold">{s.v}</div>
             <div className="text-xs text-muted-foreground mt-1">{s.l}</div>
           </div>
         ))}
@@ -38,7 +38,7 @@ export default function TeacherDash() {
 
       <section className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
         <div className="rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-display text-xl font-bold">My classes</h2>
+          <h2 className="text-xl font-bold">My classes</h2>
           <table className="mt-5 w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
               <tr><th className="py-3">Course</th><th>Batch</th><th>Students</th><th>Progress</th><th></th></tr>
@@ -71,7 +71,7 @@ export default function TeacherDash() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2">
             <Video className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-xl font-bold">Today's lectures</h2>
+            <h2 className="text-xl font-bold">Today's lectures</h2>
           </div>
           <ul className="mt-5 space-y-3">
             {[
@@ -96,7 +96,7 @@ export default function TeacherDash() {
       <section className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-2">
           <ClipboardCheck className="h-5 w-5 text-primary" />
-          <h2 className="font-display text-xl font-bold">Papers to grade</h2>
+          <h2 className="text-xl font-bold">Papers to grade</h2>
         </div>
         <div className="mt-5 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[

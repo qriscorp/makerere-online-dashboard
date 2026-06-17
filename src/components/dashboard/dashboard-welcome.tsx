@@ -31,7 +31,7 @@ export function DashboardWelcome() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
             {formatRole(user.role)} Portal
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             {greeting},{" "}
             <span className="text-primary">{firstName}</span>
           </h1>

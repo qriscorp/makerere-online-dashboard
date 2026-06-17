@@ -29,7 +29,7 @@ export default function StudentDash() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">Student portal</p>
-          <h1 className="mt-1 font-display text-3xl md:text-4xl font-bold">Karibu, Aisha 👋</h1>
+          <h1 className="mt-1 text-3xl md:text-4xl font-bold">Karibu, Aisha 👋</h1>
           <p className="mt-1 text-sm text-muted-foreground">You're on a 7-day learning streak. Keep going.</p>
         </div>
         <Link to="/courses" className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">Browse more courses</Link>
@@ -39,7 +39,7 @@ export default function StudentDash() {
         {stats.map((s) => (
           <div key={s.l} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <s.i className="h-5 w-5 text-primary" />
-            <div className="mt-3 font-display text-3xl font-bold">{s.v}</div>
+            <div className="mt-3 text-3xl font-bold">{s.v}</div>
             <div className="text-xs text-muted-foreground mt-1">{s.l}</div>
           </div>
         ))}
@@ -48,7 +48,7 @@ export default function StudentDash() {
       <section className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold">Continue learning</h2>
+            <h2 className="text-xl font-bold">Continue learning</h2>
             <Link to="/courses" className="text-xs text-primary font-semibold hover:underline">View all</Link>
           </div>
           <div className="mt-5 space-y-4">
@@ -73,7 +73,7 @@ export default function StudentDash() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-xl font-bold">Today's schedule</h2>
+            <h2 className="text-xl font-bold">Today's schedule</h2>
           </div>
           <ul className="mt-5 space-y-3">
             {schedule.map((s) => (
@@ -96,7 +96,7 @@ export default function StudentDash() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2">
             <FileCheck2 className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-xl font-bold">Upcoming exams</h2>
+            <h2 className="text-xl font-bold">Upcoming exams</h2>
           </div>
           <ul className="mt-5 divide-y divide-border">
             {[
@@ -117,13 +117,13 @@ export default function StudentDash() {
         <div className="rounded-2xl bg-hero-gradient text-cream p-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-gold" />
-            <h2 className="font-display text-xl font-bold">Your progress</h2>
+            <h2 className="text-xl font-bold">Your progress</h2>
           </div>
           <p className="mt-3 text-sm text-cream/80">You've completed 64% of your semester goals — 4 certificates within reach.</p>
           <div className="mt-5 grid grid-cols-3 gap-3 text-center">
             {[{ k: "12", v: "Certificates" }, { k: "84", v: "Lessons done" }, { k: "92%", v: "Attendance" }].map((m) => (
               <div key={m.v} className="rounded-xl bg-white/10 p-3">
-                <div className="font-display text-2xl font-bold text-gold">{m.k}</div>
+                <div className="text-2xl font-bold text-gold">{m.k}</div>
                 <div className="text-[10px] uppercase tracking-wider text-cream/70 mt-1">{m.v}</div>
               </div>
             ))}

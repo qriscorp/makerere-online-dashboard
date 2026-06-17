@@ -1,17 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
-import { CheckCheck } from "lucide-react";
-import { format, differenceInHours, differenceInMinutes } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { CheckCheck, Loader2 } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 
 import type { Notification, NotificationCategory } from "@/lib/types";
-import {
-  mockNotifications,
-  mockExaminations,
-  mockVirtualClasses,
-  mockEnrollments,
-  mockCourses,
-} from "@/lib/mock-data";
+import { api } from "@/lib/api";
+import { mapApiNotification } from "@/lib/notification-utils";
 import { useAuth } from "@/lib/auth-context";
+import { useNotifications } from "@/lib/notifications-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,68 +51,81 @@ function getCategoryBadge(category: NotificationCategory) {
 
 export default function DashboardNotifications() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { refreshUnreadCount } = useNotifications();
   const isStudent = user.role === "student";
 
-  const [notifications, setNotifications] = useState<Notification[]>([...mockNotifications]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [readFilter, setReadFilter] = useState<string>("all");
 
-  // Toast notifications for students on page load
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNotifications() {
+      setLoading(true);
+      try {
+        const data = await api.getNotifications();
+        if (!cancelled) {
+          setNotifications(data.map(mapApiNotification));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message =
+            error instanceof Error ? error.message : "Failed to load notifications";
+          toast.error("Could not load notifications", { description: message });
+          setNotifications([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadNotifications();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (!isStudent) return;
 
-    const now = new Date();
+    let cancelled = false;
 
-    // Get enrolled course unit IDs
-    const studentEnrollments = mockEnrollments.filter(
-      (e) => e.studentId === user.id && e.status !== "dropped",
-    );
-    const enrolledCourseIds = studentEnrollments.map((e) => e.courseId).filter(Boolean) as string[];
-    const unitIdsFromCourses = mockCourses
-      .filter((c) => enrolledCourseIds.includes(c.id))
-      .flatMap((c) => c.unitIds);
-    const directUnitIds = studentEnrollments.map((e) => e.courseUnitId).filter(Boolean) as string[];
-    const enrolledUnitIds = [...new Set([...unitIdsFromCourses, ...directUnitIds])];
+    async function showUpcomingAlerts() {
+      try {
+        const alerts = await api.getUpcomingAlerts();
+        if (cancelled) return;
 
-    // Check for exam deadlines within 24 hours
-    mockExaminations
-      .filter((exam) => {
-        if (exam.status !== "active") return false;
-        if (!enrolledUnitIds.includes(exam.courseUnitId)) return false;
-        const endDate = new Date(exam.endDate);
-        const hoursUntilDeadline = differenceInHours(endDate, now);
-        return hoursUntilDeadline > 0 && hoursUntilDeadline <= 24;
-      })
-      .forEach((exam) => {
-        const hoursLeft = differenceInHours(new Date(exam.endDate), now);
-        toast.warning(`Exam deadline approaching!`, {
-          description: `"${exam.title}" is due in ${hoursLeft} hour${hoursLeft !== 1 ? "s" : ""}`,
-          duration: 8000,
+        alerts.exam_deadlines.forEach((exam) => {
+          toast.warning("Exam deadline approaching!", {
+            description: `"${exam.title}" is due in ${exam.hours_left} hour${exam.hours_left !== 1 ? "s" : ""}`,
+            duration: 8000,
+          });
         });
-      });
 
-    // Check for live classes starting within 15 minutes
-    mockVirtualClasses
-      .filter((cls) => {
-        if (!enrolledUnitIds.includes(cls.courseUnitId)) return false;
-        const classDateTime = new Date(`${cls.date}T${cls.startTime}`);
-        const minutesUntilClass = differenceInMinutes(classDateTime, now);
-        return minutesUntilClass > 0 && minutesUntilClass <= 15;
-      })
-      .forEach((cls) => {
-        const minutesLeft = differenceInMinutes(new Date(`${cls.date}T${cls.startTime}`), now);
-        toast.info(`Live class starting soon!`, {
-          description: `"${cls.title}" starts in ${minutesLeft} minute${minutesLeft !== 1 ? "s" : ""}`,
-          duration: 10000,
+        alerts.upcoming_classes.forEach((cls) => {
+          toast.info("Live class starting soon!", {
+            description: `"${cls.title}" starts in ${cls.minutes_left} minute${cls.minutes_left !== 1 ? "s" : ""}`,
+            duration: 10000,
+          });
         });
-      });
-  }, [isStudent, user.id]);
+      } catch {
+        // Alerts are optional; ignore failures.
+      }
+    }
 
-  // Filter notifications for current user
-  const userNotifications = notifications.filter((n) => n.userId === user.id);
+    void showUpcomingAlerts();
+    return () => {
+      cancelled = true;
+    };
+  }, [isStudent]);
 
   const filteredNotifications = useMemo(() => {
-    let filtered = userNotifications;
+    let filtered = notifications;
 
     if (categoryFilter !== "all") {
       filtered = filtered.filter((n) => n.category === categoryFilter);
@@ -127,26 +137,51 @@ export default function DashboardNotifications() {
       filtered = filtered.filter((n) => !n.isRead);
     }
 
-    // Sort by date, most recent first
     return filtered.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-  }, [userNotifications, categoryFilter, readFilter]);
+  }, [notifications, categoryFilter, readFilter]);
 
-  const handleMarkAsRead = (notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
-    );
+  const handleMarkAsRead = async (notification: Notification) => {
+    if (notification.isRead) {
+      if (notification.linkTo) {
+        navigate(notification.linkTo);
+      }
+      return;
+    }
+
+    try {
+      const updated = await api.markNotificationRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? mapApiNotification(updated) : n,
+        ),
+      );
+      await refreshUnreadCount();
+      if (notification.linkTo) {
+        navigate(notification.linkTo);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update notification";
+      toast.error("Could not mark as read", { description: message });
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.userId === user.id ? { ...n, isRead: true } : n)),
-    );
-    toast.success("All notifications marked as read");
+  const handleMarkAllAsRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      await refreshUnreadCount();
+      toast.success("All notifications marked as read");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to mark all as read";
+      toast.error("Could not update notifications", { description: message });
+    }
   };
 
-  const unreadCount = userNotifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <div className="space-y-6">
@@ -159,7 +194,6 @@ export default function DashboardNotifications() {
         )}
       </PageHeader>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[160px]">
@@ -186,9 +220,13 @@ export default function DashboardNotifications() {
         </Select>
       </div>
 
-      {/* Notification List */}
       <div className="space-y-2">
-        {filteredNotifications.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center rounded-2xl border border-border bg-card p-8 text-muted-foreground shadow-soft">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading notifications...
+          </div>
+        ) : filteredNotifications.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-soft">
             <p>No notifications found.</p>
           </div>
@@ -199,7 +237,7 @@ export default function DashboardNotifications() {
               className={`cursor-pointer rounded-2xl border border-border bg-card p-4 shadow-soft transition-colors hover:bg-muted/50 ${
                 !notification.isRead ? "border-l-4 border-l-primary" : ""
               }`}
-              onClick={() => handleMarkAsRead(notification.id)}
+              onClick={() => void handleMarkAsRead(notification)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">

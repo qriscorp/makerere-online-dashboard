@@ -13,7 +13,7 @@ export default function AdminDash() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">Administrator</p>
-          <h1 className="mt-1 font-display text-3xl md:text-4xl font-bold">Platform overview</h1>
+          <h1 className="mt-1 text-3xl md:text-4xl font-bold">Platform overview</h1>
           <p className="mt-1 text-sm text-muted-foreground">Snapshot for {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}.</p>
         </div>
         <div className="flex gap-2">
@@ -29,7 +29,7 @@ export default function AdminDash() {
               <k.i className="h-5 w-5 text-primary" />
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.d}</span>
             </div>
-            <div className="mt-3 font-display text-3xl font-bold">{k.v}</div>
+            <div className="mt-3 text-3xl font-bold">{k.v}</div>
             <div className="text-xs text-muted-foreground mt-1">{k.l}</div>
           </div>
         ))}
@@ -39,7 +39,7 @@ export default function AdminDash() {
         <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-xl font-bold">Enrollment — last 12 weeks</h2>
+            <h2 className="text-xl font-bold">Enrollment — last 12 weeks</h2>
           </div>
           <div className="mt-6 flex items-end gap-2 h-44">
             {[34, 42, 38, 56, 48, 61, 72, 65, 80, 92, 88, 104].map((v, i) => (
@@ -54,7 +54,7 @@ export default function AdminDash() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-xl font-bold">System health</h2>
+            <h2 className="text-xl font-bold">System health</h2>
           </div>
           <ul className="mt-5 space-y-3 text-sm">
             {[
@@ -77,7 +77,7 @@ export default function AdminDash() {
 
       <section className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
         <div className="rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-display text-xl font-bold">Recent enrollments</h2>
+          <h2 className="text-xl font-bold">Recent enrollments</h2>
           <table className="mt-5 w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
               <tr><th className="py-3">Student</th><th>Course</th><th>Amount</th><th>Status</th></tr>
@@ -106,7 +106,7 @@ export default function AdminDash() {
         </div>
 
         <div className="rounded-2xl bg-hero-gradient text-cream p-6">
-          <h2 className="font-display text-xl font-bold">Pending approvals</h2>
+          <h2 className="text-xl font-bold">Pending approvals</h2>
           <ul className="mt-5 space-y-3">
             {[
               { t: "New teacher application", n: "Dr. Mercy Otieno" },

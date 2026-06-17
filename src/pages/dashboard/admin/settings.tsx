@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -133,18 +134,16 @@ export default function DashboardSettings() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="zoom-api-key">Zoom API Key</Label>
-            <Input
+            <PasswordInput
               id="zoom-api-key"
-              type="password"
               value={settings.zoom_api_key || ""}
               onChange={(e) => updateSetting("zoom_api_key", e.target.value)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="zoom-api-secret">Zoom API Secret</Label>
-            <Input
+            <PasswordInput
               id="zoom-api-secret"
-              type="password"
               value={settings.zoom_api_secret || ""}
               onChange={(e) => updateSetting("zoom_api_secret", e.target.value)}
             />
@@ -159,9 +158,8 @@ export default function DashboardSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="interswitch-api-key">Interswitch API Key</Label>
-            <Input
+            <PasswordInput
               id="interswitch-api-key"
-              type="password"
               value={settings.interswitch_api_key || ""}
               onChange={(e) =>
                 updateSetting("interswitch_api_key", e.target.value)
@@ -172,9 +170,8 @@ export default function DashboardSettings() {
             <Label htmlFor="interswitch-merchant-id">
               Interswitch Merchant ID
             </Label>
-            <Input
+            <PasswordInput
               id="interswitch-merchant-id"
-              type="password"
               value={settings.interswitch_merchant_id || ""}
               onChange={(e) =>
                 updateSetting("interswitch_merchant_id", e.target.value)

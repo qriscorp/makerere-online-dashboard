@@ -192,6 +192,90 @@ export interface ApiError {
   detail: string;
 }
 
+export interface ApiNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  category: "enrollment" | "payment" | "class" | "exam";
+  is_read: boolean;
+  link_to: string | null;
+  created_at: string;
+}
+
+export interface ApiUnreadCount {
+  count: number;
+}
+
+export interface ApiExamDeadlineAlert {
+  id: string;
+  title: string;
+  hours_left: number;
+  course_unit_id: string;
+}
+
+export interface ApiUpcomingClassAlert {
+  id: string;
+  title: string;
+  minutes_left: number;
+  course_unit_id: string;
+}
+
+export interface ApiUpcomingAlerts {
+  exam_deadlines: ApiExamDeadlineAlert[];
+  upcoming_classes: ApiUpcomingClassAlert[];
+}
+
+export type ApiDashboardIconKey =
+  | "graduation_cap"
+  | "users"
+  | "book_open"
+  | "dollar_sign"
+  | "calendar"
+  | "file_text"
+  | "trending_up"
+  | "credit_card"
+  | "clipboard_check"
+  | "award";
+
+export type ApiDashboardAccent = "emerald" | "violet" | "gold" | "sky" | "crimson";
+export type ApiDashboardTrend = "up" | "down" | "neutral";
+export type ApiDashboardMetricKey = "enrollments" | "completions" | "assessments";
+
+export interface ApiDashboardKpi {
+  key: string;
+  icon: ApiDashboardIconKey;
+  value: string;
+  label: string;
+  delta?: string | null;
+  trend?: ApiDashboardTrend | null;
+  breakdown?: string | null;
+  accent: ApiDashboardAccent;
+}
+
+export interface ApiDashboardSecondaryStat {
+  key: string;
+  icon: ApiDashboardIconKey;
+  label: string;
+  value: string;
+}
+
+export interface ApiDashboardOverview {
+  kpis: ApiDashboardKpi[];
+  secondary_stats: ApiDashboardSecondaryStat[];
+}
+
+export interface ApiDashboardActivityPoint {
+  date: string;
+  value: number;
+}
+
+export interface ApiDashboardActivity {
+  metric: ApiDashboardMetricKey;
+  days: number;
+  points: ApiDashboardActivityPoint[];
+}
+
 export interface ApiCertificate {
   id: string;
   student_id: string;
@@ -866,4 +950,38 @@ export const api = {
 
   getCertificate: (id: string) =>
     request<ApiCertificate>(`/api/certificates/${id}`),
+
+  getNotifications: (params?: { category?: string; is_read?: boolean }) => {
+    const search = new URLSearchParams();
+    if (params?.category) search.set("category", params.category);
+    if (params?.is_read !== undefined) search.set("is_read", String(params.is_read));
+    const qs = search.toString();
+    return request<ApiNotification[]>(`/api/notifications${qs ? `?${qs}` : ""}`);
+  },
+
+  getUnreadNotificationCount: () =>
+    request<ApiUnreadCount>("/api/notifications/unread-count"),
+
+  getUpcomingAlerts: () =>
+    request<ApiUpcomingAlerts>("/api/notifications/upcoming-alerts"),
+
+  markNotificationRead: (id: string) =>
+    request<ApiNotification>(`/api/notifications/${id}/read`, {
+      method: "PATCH",
+    }),
+
+  markAllNotificationsRead: () =>
+    request<ApiUnreadCount>("/api/notifications/read-all", {
+      method: "PATCH",
+    }),
+
+  getDashboardOverview: () => request<ApiDashboardOverview>("/api/dashboard/overview"),
+
+  getDashboardActivity: (params?: { metric?: ApiDashboardMetricKey; days?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.metric) search.set("metric", params.metric);
+    if (params?.days) search.set("days", String(params.days));
+    const qs = search.toString();
+    return request<ApiDashboardActivity>(`/api/dashboard/activity${qs ? `?${qs}` : ""}`);
+  },
 };
