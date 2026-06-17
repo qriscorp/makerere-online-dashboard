@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import type { ApiCertificateVerification } from "@/lib/api";
 import { notify } from "@/lib/notify";
@@ -6,6 +7,7 @@ import crest from "@/assets/makerere-logo.png";
 import { Search, ShieldCheck, ShieldX, Loader2 } from "lucide-react";
 
 export default function CertificateVerification() {
+  const [searchParams] = useSearchParams();
   const [serialNumber, setSerialNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<
@@ -14,6 +16,11 @@ export default function CertificateVerification() {
     | { type: "error"; message: string }
     | null
   >(null);
+
+  useEffect(() => {
+    const serial = searchParams.get("serial");
+    if (serial) setSerialNumber(serial);
+  }, [searchParams]);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();

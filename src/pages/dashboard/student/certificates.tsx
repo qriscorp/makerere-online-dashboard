@@ -1,219 +1,116 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Award, Download, Loader2 } from "lucide-react";
+import { Award, Download, Eye, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { jsPDF } from "jspdf";
+import { Link } from "react-router-dom";
 
 import { api } from "@/lib/api";
 import type { ApiCertificate } from "@/lib/api";
+import {
+  CertificatePreview,
+  downloadCertificatePdf,
+} from "@/components/certificates/certificate-preview";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import crest from "@/assets/makerere-logo.png";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
-// ─── PDF Download Helper ──────────────────────────────────────────────────────
-
-function loadImageAsBase64(src: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { reject("Canvas not supported"); return; }
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject("Failed to load image");
-    img.src = src;
-  });
+function typeBadge(cert: ApiCertificate) {
+  if (cert.certificate_type === "course") {
+    return (
+      <Badge className="border-transparent bg-primary/10 text-primary hover:bg-primary/10">
+        Course
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100">
+      Course Unit
+    </Badge>
+  );
 }
 
-async function downloadCertificatePDF(cert: ApiCertificate) {
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const w = pdf.internal.pageSize.getWidth();
-  const h = pdf.internal.pageSize.getHeight();
-
-  // Background
-  pdf.setFillColor(250, 248, 245);
-  pdf.rect(0, 0, w, h, "F");
-
-  // Border (maroon)
-  pdf.setDrawColor(107, 29, 29);
-  pdf.setLineWidth(1.2);
-  pdf.roundedRect(12, 10, w - 24, h - 20, 4, 4, "S");
-
-  // Inner border (gold)
-  pdf.setDrawColor(196, 160, 60);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(16, 14, w - 32, h - 28, 3, 3, "S");
-
-  // Corner decorations
-  pdf.setDrawColor(196, 160, 60);
-  pdf.setLineWidth(0.8);
-  pdf.line(18, 16, 18, 26); pdf.line(18, 16, 28, 16);
-  pdf.line(w - 18, 16, w - 18, 26); pdf.line(w - 18, 16, w - 28, 16);
-  pdf.line(18, h - 16, 18, h - 26); pdf.line(18, h - 16, 28, h - 16);
-  pdf.line(w - 18, h - 16, w - 18, h - 26); pdf.line(w - 18, h - 16, w - 28, h - 16);
-
-  // Add logo
-  try {
-    const logoBase64 = await loadImageAsBase64(crest);
-    pdf.addImage(logoBase64, "PNG", w / 2 - 8, 20, 16, 16);
-  } catch {
-    // Skip logo if loading fails
-  }
-
-  // School name
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.setTextColor(107, 29, 29);
-  pdf.text("MAKERERE ONLINE SCHOOL", w / 2, 44, { align: "center" });
-
-  // Gold divider
-  pdf.setDrawColor(196, 160, 60);
-  pdf.setLineWidth(0.5);
-  pdf.line(w / 2 - 40, 49, w / 2 + 40, 49);
-
-  // Certificate of Completion
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(196, 160, 60);
-  pdf.text("CERTIFICATE OF COMPLETION", w / 2, 56, { align: "center" });
-
-  // This is to certify that
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(107, 114, 128);
-  pdf.text("This is to certify that", w / 2, 70, { align: "center" });
-
-  // Student name
-  pdf.setFont("times", "bold");
-  pdf.setFontSize(26);
-  pdf.setTextColor(31, 41, 55);
-  pdf.text(cert.student_name, w / 2, 84, { align: "center" });
-
-  // has successfully completed
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(107, 114, 128);
-  const typeText = cert.certificate_type === "course" ? "course" : "course unit";
-  pdf.text(`has successfully completed the ${typeText}`, w / 2, 96, { align: "center" });
-
-  // Course title
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(16);
-  pdf.setTextColor(107, 29, 29);
-  pdf.text(cert.title, w / 2, 108, { align: "center" });
-
-  // Gold divider
-  pdf.setDrawColor(196, 160, 60);
-  pdf.setLineWidth(0.5);
-  pdf.line(w / 2 - 40, 115, w / 2 + 40, 115);
-
-  // Date
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(107, 114, 128);
-  pdf.text(`Issued on ${format(new Date(cert.issue_date), "dd MMMM yyyy")}`, w / 2, 124, { align: "center" });
-
-  // Certificate number
-  pdf.setFont("courier", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(156, 163, 175);
-  pdf.text(cert.certificate_number, 30, h - 22);
-
-  // Status
-  if (cert.status === "active") {
-    pdf.setTextColor(5, 150, 105);
-    pdf.text("Verified", w - 30, h - 22, { align: "right" });
-  } else {
-    pdf.setTextColor(220, 38, 38);
-    pdf.text("Revoked", w - 30, h - 22, { align: "right" });
-  }
-
-  pdf.save(`Certificate-${cert.certificate_number}.pdf`);
-}
-
-// ─── Certificate Card ─────────────────────────────────────────────────────────
-
-function CertificateCard({
+function CertificateSummaryCard({
   certificate,
+  onView,
   onDownload,
   downloading,
 }: {
   certificate: ApiCertificate;
+  onView: (cert: ApiCertificate) => void;
   onDownload: (cert: ApiCertificate) => void;
-  downloading: string | null;
+  downloading: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-      {/* The certificate design */}
-      <div className="mx-auto max-w-3xl">
-        <div
-          className="relative rounded-xl p-10 text-center"
-          style={{
-            background: "linear-gradient(135deg, #faf8f5 0%, #ffffff 40%, #faf8f5 100%)",
-            border: "3px solid oklch(0.42 0.18 25)",
-            boxShadow: "inset 0 0 0 6px oklch(0.42 0.18 25 / 0.08)",
-          }}
-        >
-          <div className="absolute inset-3 rounded-lg pointer-events-none" style={{ border: "1px solid oklch(0.78 0.14 80 / 0.6)" }} />
-          <div className="absolute top-4 left-4 h-10 w-10 border-t-2 border-l-2 rounded-tl-md" style={{ borderColor: "oklch(0.78 0.14 80)" }} />
-          <div className="absolute top-4 right-4 h-10 w-10 border-t-2 border-r-2 rounded-tr-md" style={{ borderColor: "oklch(0.78 0.14 80)" }} />
-          <div className="absolute bottom-4 left-4 h-10 w-10 border-b-2 border-l-2 rounded-bl-md" style={{ borderColor: "oklch(0.78 0.14 80)" }} />
-          <div className="absolute bottom-4 right-4 h-10 w-10 border-b-2 border-r-2 rounded-br-md" style={{ borderColor: "oklch(0.78 0.14 80)" }} />
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+      <button
+        type="button"
+        onClick={() => onView(certificate)}
+        className="block w-full text-left transition-opacity hover:opacity-95"
+      >
+        <CertificatePreview certificate={certificate} variant="compact" />
+      </button>
 
-          <div className="mb-6 flex flex-col items-center gap-3">
-            <img src={crest} alt="Makerere Online Logo" className="h-16 w-16 object-contain" />
-            <h2 className="font-display text-xl font-bold tracking-wide" style={{ color: "oklch(0.42 0.18 25)" }}>
-              MAKERERE ONLINE SCHOOL
-            </h2>
+      <div className="space-y-3 border-t border-border p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {typeBadge(certificate)}
+              {certificate.status === "active" ? (
+                <Badge variant="outline" className="border-emerald-200 text-emerald-700">
+                  Verified
+                </Badge>
+              ) : (
+                <Badge variant="destructive">Revoked</Badge>
+              )}
+            </div>
+            <h3 className="truncate font-semibold">{certificate.title}</h3>
+            <p className="text-xs text-muted-foreground">
+              Issued {format(new Date(certificate.issue_date), "dd MMM yyyy")}
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              {certificate.certificate_number}
+            </p>
           </div>
-
-          <div className="mx-auto mb-4 h-0.5 w-48" style={{ background: "linear-gradient(90deg, transparent, oklch(0.78 0.14 80), transparent)" }} />
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold" style={{ color: "oklch(0.78 0.14 80)" }}>Certificate of Completion</p>
-
-          <div className="my-8 space-y-4">
-            <p className="text-sm text-gray-500">This is to certify that</p>
-            <p className="font-display text-3xl font-bold" style={{ color: "oklch(0.22 0.08 30)" }}>{certificate.student_name}</p>
-            <p className="text-sm text-gray-500">has successfully completed the {certificate.certificate_type === "course" ? "course" : "course unit"}</p>
-            <p className="text-xl font-semibold" style={{ color: "oklch(0.42 0.18 25)" }}>{certificate.title}</p>
-          </div>
-
-          <div className="mx-auto mb-6 h-0.5 w-48" style={{ background: "linear-gradient(90deg, transparent, oklch(0.78 0.14 80), transparent)" }} />
-          <p className="text-sm text-gray-500">Issued on <span className="font-medium text-gray-700">{format(new Date(certificate.issue_date), "dd MMMM yyyy")}</span></p>
-
-          <div className="mt-8 flex items-center justify-between px-6 text-xs text-gray-400">
-            <span className="font-mono">{certificate.certificate_number}</span>
-            <span className="font-semibold" style={{ color: certificate.status === "active" ? "oklch(0.55 0.15 145)" : "oklch(0.55 0.2 25)" }}>
-              {certificate.status === "active" ? "✓ Verified" : "✗ Revoked"}
-            </span>
-          </div>
+          <Award className="h-8 w-8 shrink-0 text-primary/30" />
         </div>
-      </div>
 
-      <div className="mt-4 flex justify-center">
-        <Button
-          onClick={() => onDownload(certificate)}
-          disabled={downloading === certificate.id}
-          className="gap-2"
-        >
-          {downloading === certificate.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Download PDF
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => onView(certificate)} className="gap-1.5">
+            <Eye className="h-3.5 w-3.5" />
+            View
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onDownload(certificate)}
+            disabled={downloading || certificate.status !== "active"}
+            className="gap-1.5"
+          >
+            {downloading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            Download PDF
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function StudentCertificates() {
   const [certificates, setCertificates] = useState<ApiCertificate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<ApiCertificate | null>(null);
 
   useEffect(() => {
     api
@@ -224,14 +121,15 @@ export default function StudentCertificates() {
   }, []);
 
   async function handleDownload(cert: ApiCertificate) {
-    setDownloading(cert.id);
+    setDownloadingId(cert.id);
     try {
-      await downloadCertificatePDF(cert);
-      toast.success("Certificate downloaded!");
-    } catch {
-      toast.error("Failed to generate PDF");
+      await downloadCertificatePdf(cert);
+      toast.success("Certificate downloaded");
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
-      setDownloading(null);
+      setDownloadingId(null);
     }
   }
 
@@ -247,29 +145,78 @@ export default function StudentCertificates() {
     <div className="space-y-6">
       <PageHeader
         title="My Certificates"
-        description="View and download your earned certificates."
+        description="View, verify, and download your earned certificates."
       />
 
       {certificates.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-soft">
-          <Award className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
-          <p className="font-medium">No certificates yet</p>
-          <p className="mt-1 text-sm">
-            Complete your courses and course units to earn certificates.
+        <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-soft">
+          <Award className="mx-auto mb-4 h-14 w-14 text-muted-foreground/40" />
+          <p className="text-lg font-medium">No certificates yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Complete your courses and course units to earn certificates. They will appear here
+            once issued by your school.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {certificates.map((cert) => (
-            <CertificateCard
-              key={cert.id}
-              certificate={cert}
-              onDownload={handleDownload}
-              downloading={downloading}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-6 md:grid-cols-2">
+            {certificates.map((cert) => (
+              <CertificateSummaryCard
+                key={cert.id}
+                certificate={cert}
+                onView={setViewing}
+                onDownload={(c) => handleDownload(c)}
+                downloading={downloadingId === cert.id}
+              />
+            ))}
+          </div>
+        </>
       )}
+
+      <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
+        <DialogContent className="max-h-[95vh] max-w-4xl overflow-y-auto p-0 sm:p-0">
+          {viewing && (
+            <>
+              <DialogHeader className="border-b border-border px-6 py-4">
+                <DialogTitle>{viewing.title}</DialogTitle>
+                <DialogDescription className="font-mono text-xs">
+                  {viewing.certificate_number}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="bg-muted/30 p-4 md:p-6">
+                <div className="mx-auto max-w-4xl rounded-xl shadow-lg">
+                  <CertificatePreview certificate={viewing} variant="full" />
+                </div>
+              </div>
+
+              <DialogFooter className="flex-col gap-2 border-t border-border px-6 py-4 sm:flex-row">
+                <Button variant="outline" asChild className="gap-1.5">
+                  <Link
+                    to={`/certificate-verification?serial=${encodeURIComponent(viewing.certificate_number)}`}
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Verify online
+                  </Link>
+                </Button>
+                <Button
+                  onClick={() => handleDownload(viewing)}
+                  disabled={downloadingId === viewing.id || viewing.status !== "active"}
+                  className="gap-1.5"
+                >
+                  {downloadingId === viewing.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Download PDF
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
