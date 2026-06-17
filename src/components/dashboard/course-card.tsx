@@ -19,7 +19,7 @@ function formatUGX(amount: number): string {
 export function CourseCard({ course, schoolName, onClick, actionButton, statusBadge }: CourseCardProps) {
   return (
     <div
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-elegant transition-all hover:-translate-y-0.5 cursor-pointer"
+      className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-border/80 cursor-pointer"
       onClick={onClick}
     >
       {/* Image */}

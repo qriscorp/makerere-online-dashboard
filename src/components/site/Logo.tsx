@@ -12,7 +12,7 @@ export function Logo({ light = false }: { light?: boolean }) {
         />
       </span>
       <span className="flex flex-col leading-tight">
-        <span className={`font-display text-base font-bold ${light ? "text-cream" : "text-foreground"}`}>
+        <span className={`text-base font-bold ${light ? "text-cream" : "text-foreground"}`}>
           Makerere
         </span>
         <span className={`text-[10px] uppercase tracking-[0.18em] ${light ? "text-gold" : "text-muted-foreground"}`}>

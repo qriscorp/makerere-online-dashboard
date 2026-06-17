@@ -87,7 +87,7 @@ export default function Courses() {
       <section className="bg-hero-gradient py-20">
         <div className="container-tight">
           <span className="text-xs uppercase tracking-[0.25em] text-gold">Catalog</span>
-          <h1 className="mt-3 font-display text-5xl md:text-6xl font-bold text-cream max-w-3xl">
+          <h1 className="mt-3 text-5xl md:text-6xl font-bold text-cream max-w-3xl">
             Find a course worthy of your ambition.
           </h1>
           <p className="mt-5 text-cream/80 max-w-xl">
@@ -125,7 +125,7 @@ export default function Courses() {
                   </span>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-display text-lg font-bold leading-snug line-clamp-2">
+                  <h3 className="text-lg font-bold leading-snug line-clamp-2">
                     {course.title}
                   </h3>
                   {course.description && (

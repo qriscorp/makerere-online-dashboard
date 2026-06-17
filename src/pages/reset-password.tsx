@@ -85,7 +85,7 @@ export default function ResetPassword() {
             Back to sign in
           </Link>
 
-          <h1 className="font-display text-3xl font-bold">Set new password</h1>
+          <h1 className="text-3xl font-bold">Set new password</h1>
 
           {validating ? (
             <div className="mt-12 flex justify-center">

@@ -50,8 +50,8 @@ export default function ForgotPassword() {
         <div className="absolute inset-0 bg-hero-gradient opacity-85" />
         <div className="relative flex h-full items-end p-12">
           <div className="max-w-md text-cream">
-            <p className="font-display text-sm italic text-gold">Account recovery</p>
-            <h2 className="mt-3 font-display text-4xl font-bold leading-tight">
+            <p className="text-sm italic text-gold">Account recovery</p>
+            <h2 className="mt-3 text-4xl font-bold leading-tight">
               We&apos;ll help you get back into your account.
             </h2>
           </div>
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
             Back to sign in
           </Link>
 
-          <h1 className="font-display text-3xl font-bold">Forgot password</h1>
+          <h1 className="text-3xl font-bold">Forgot password</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter the email on your account and we&apos;ll send a reset link.
           </p>

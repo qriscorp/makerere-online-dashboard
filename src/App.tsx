@@ -118,7 +118,7 @@ function Loading() {
 
 function RootLayout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col font-sans antialiased">
       <Header />
       <main className="flex-1">
         <Suspense fallback={<Loading />}>
@@ -146,12 +146,14 @@ function DashboardLayout() {
       <div className="dashboard-shell min-h-svh font-sans antialiased">
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset>
+          <SidebarInset className="bg-muted/30">
             <DashboardHeader />
             <div className="flex-1 overflow-auto p-4 md:p-6">
-              <Suspense fallback={<Loading />}>
-                <Outlet />
-              </Suspense>
+              <div className="mx-auto max-w-7xl">
+                <Suspense fallback={<Loading />}>
+                  <Outlet />
+                </Suspense>
+              </div>
             </div>
           </SidebarInset>
         </SidebarProvider>
@@ -187,7 +189,7 @@ function NotFound() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-display text-8xl font-bold text-primary">404</h1>
+        <h1 className="text-8xl font-bold text-primary">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
@@ -209,7 +211,7 @@ function DashboardNotFound() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-display text-6xl font-bold text-primary">404</h1>
+        <h1 className="text-6xl font-bold text-primary">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           This dashboard page doesn't exist.

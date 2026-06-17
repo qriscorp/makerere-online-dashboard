@@ -114,10 +114,10 @@ export default function GetStarted() {
         <div className="absolute inset-0 bg-hero-gradient opacity-85" />
         <div className="relative flex h-full items-end p-12">
           <div className="max-w-md text-cream">
-            <p className="font-display text-sm italic text-gold">
+            <p className="text-sm italic text-gold">
               Pro Futuro Aedificamus
             </p>
-            <h2 className="mt-3 font-display text-4xl font-bold leading-tight">
+            <h2 className="mt-3 text-4xl font-bold leading-tight">
               Start your journey at Makerere Online.
             </h2>
             <p className="mt-4 text-cream/80">
@@ -129,7 +129,7 @@ export default function GetStarted() {
 
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md">
-          <h1 className="font-display text-3xl font-bold">
+          <h1 className="text-3xl font-bold">
             {step === "register" ? "Create account" : "Verify your email"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

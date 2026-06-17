@@ -113,7 +113,7 @@ export default function CoursePage() {
   if (!c) {
     return (
       <div className="container-tight py-24 text-center">
-        <h1 className="font-display text-4xl font-bold">Course not found</h1>
+        <h1 className="text-4xl font-bold">Course not found</h1>
         <Link to="/courses" className="mt-4 inline-block text-primary font-semibold">Back to catalog</Link>
       </div>
     );
@@ -131,7 +131,7 @@ export default function CoursePage() {
           <div className="mt-6 grid lg:grid-cols-[1.4fr_1fr] gap-10 items-start">
             <div>
               <span className="text-[10px] uppercase tracking-[0.25em] text-gold">{c.cat}</span>
-              <h1 className="mt-3 font-display text-4xl md:text-5xl font-bold leading-tight">{c.title}</h1>
+              <h1 className="mt-3 text-4xl md:text-5xl font-bold leading-tight">{c.title}</h1>
               <p className="mt-4 text-cream/85 max-w-2xl">{c.tagline}</p>
               <div className="mt-6 flex flex-wrap items-center gap-5 text-sm text-cream/80">
                 <span className="flex items-center gap-1.5"><Star className="h-4 w-4 fill-gold text-gold" /> {c.rating} rating</span>
@@ -140,7 +140,7 @@ export default function CoursePage() {
                 <span className="flex items-center gap-1.5"><Globe className="h-4 w-4" /> English</span>
               </div>
               <div className="mt-7 flex items-center gap-3">
-                <span className="h-10 w-10 rounded-full bg-gold-gradient grid place-items-center font-display font-bold text-[oklch(0.2_0.03_40)]">
+                <span className="h-10 w-10 rounded-full bg-gold-gradient grid place-items-center font-bold text-[oklch(0.2_0.03_40)]">
                   {c.teacher.name.split(" ").slice(-1)[0][0]}
                 </span>
                 <div>
@@ -158,7 +158,7 @@ export default function CoursePage() {
                 </button>
               </div>
               <div className="mt-5 flex items-baseline justify-between">
-                <span className="font-display text-3xl font-bold text-primary">{c.price}</span>
+                <span className="text-3xl font-bold text-primary">{c.price}</span>
                 {c.price !== "Free" && <span className="text-xs text-muted-foreground">one-time, lifetime access</span>}
               </div>
               <Link to="/get-started" className="mt-5 block rounded-md bg-primary text-primary-foreground text-center py-3 text-sm font-semibold hover:opacity-90 shadow-soft">
@@ -179,7 +179,7 @@ export default function CoursePage() {
 
       <section className="container-tight py-16 grid lg:grid-cols-[1fr_320px] gap-10">
         <div>
-          <h2 className="font-display text-3xl font-bold">What you'll learn</h2>
+          <h2 className="text-3xl font-bold">What you'll learn</h2>
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             {c.outcomes.map((o) => (
               <div key={o} className="flex gap-3 rounded-xl border border-border bg-card p-4">
@@ -189,13 +189,13 @@ export default function CoursePage() {
             ))}
           </div>
 
-          <h2 className="mt-14 font-display text-3xl font-bold">Curriculum</h2>
+          <h2 className="mt-14 text-3xl font-bold">Curriculum</h2>
           <p className="mt-1 text-sm text-muted-foreground">{c.chapters.length} chapters · {totalLessons} lessons</p>
           <ol className="mt-6 space-y-3">
             {c.chapters.map((ch, i) => (
               <li key={ch.title} className="rounded-xl border border-border bg-card p-5 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary font-display font-bold">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary font-bold">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
@@ -211,9 +211,9 @@ export default function CoursePage() {
 
         <aside className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-6">
-            <h3 className="font-display text-lg font-bold">Meet your teacher</h3>
+            <h3 className="text-lg font-bold">Meet your teacher</h3>
             <div className="mt-4 flex items-center gap-3">
-              <span className="h-14 w-14 rounded-full bg-gold-gradient grid place-items-center font-display text-lg font-bold text-[oklch(0.2_0.03_40)]">
+              <span className="h-14 w-14 rounded-full bg-gold-gradient grid place-items-center text-lg font-bold text-[oklch(0.2_0.03_40)]">
                 {c.teacher.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
               </span>
               <div>
@@ -224,7 +224,7 @@ export default function CoursePage() {
             <p className="mt-4 text-sm text-muted-foreground">A working expert with years of teaching experience, here to walk with you through every chapter.</p>
           </div>
           <div className="rounded-2xl bg-hero-gradient text-cream p-6">
-            <h3 className="font-display text-lg font-bold">Not sure yet?</h3>
+            <h3 className="text-lg font-bold">Not sure yet?</h3>
             <p className="mt-2 text-sm text-cream/80">Browse the full catalog or talk to admissions.</p>
             <Link to="/contact" className="mt-4 inline-block text-gold text-sm font-semibold hover:underline">Talk to admissions →</Link>
           </div>

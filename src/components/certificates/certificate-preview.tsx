@@ -39,7 +39,7 @@ export const CertificatePreview = forwardRef<HTMLDivElement, CertificatePreviewP
           aria-hidden
         >
           <span
-            className={`font-display font-bold uppercase tracking-[0.2em] ${isCompact ? "text-4xl" : "text-7xl"}`}
+            className={`font-bold uppercase tracking-[0.2em] ${isCompact ? "text-4xl" : "text-7xl"}`}
             style={{ color: MAROON }}
           >
             Makerere
@@ -84,7 +84,7 @@ export const CertificatePreview = forwardRef<HTMLDivElement, CertificatePreviewP
               className={`object-contain ${isCompact ? "h-8 w-8" : "h-14 w-14 md:h-16 md:w-16"}`}
             />
             <p
-              className={`font-display font-bold uppercase tracking-[0.15em] ${isCompact ? "text-[0.65rem]" : "text-sm md:text-base"}`}
+              className={`font-bold uppercase tracking-[0.15em] ${isCompact ? "text-[0.65rem]" : "text-sm md:text-base"}`}
               style={{ color: MAROON }}
             >
               Makerere Online School
@@ -116,7 +116,7 @@ export const CertificatePreview = forwardRef<HTMLDivElement, CertificatePreviewP
           <div className={`max-w-2xl space-y-2 ${isCompact ? "space-y-1" : "space-y-3"}`}>
             <p className="text-stone-500">This is to certify that</p>
             <p
-              className={`font-display font-bold leading-tight ${isCompact ? "text-lg" : "text-2xl md:text-4xl"}`}
+              className={`font-bold leading-tight ${isCompact ? "text-lg" : "text-2xl md:text-4xl"}`}
               style={{ color: INK }}
             >
               {certificate.student_name}

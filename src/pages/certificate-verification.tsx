@@ -63,7 +63,7 @@ export default function CertificateVerification() {
           className="h-16 w-16 object-contain drop-shadow-sm"
         />
         <div className="text-center">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             Certificate Verification
           </h1>
           <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gold font-medium">
@@ -168,7 +168,7 @@ export default function CertificateVerification() {
       {result?.type === "not-found" && (
         <div className="mt-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
           <ShieldX className="mx-auto h-10 w-10 text-muted-foreground/60" />
-          <h3 className="mt-3 font-display text-lg font-semibold text-foreground">
+          <h3 className="mt-3 text-lg font-semibold text-foreground">
             Certificate not found
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -181,7 +181,7 @@ export default function CertificateVerification() {
       {result?.type === "error" && (
         <div className="mt-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
           <ShieldX className="mx-auto h-10 w-10 text-red-400" />
-          <h3 className="mt-3 font-display text-lg font-semibold text-foreground">
+          <h3 className="mt-3 text-lg font-semibold text-foreground">
             Verification Error
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
