@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 import { api, type ApiSchool, type ApiUser } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
+import { EntityViewDialog } from "@/components/dashboard/entity-view-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,12 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const schoolSchema = z.object({
   name: z.string().min(1, "School name is required"),
@@ -54,12 +50,15 @@ export default function DashboardSchools() {
   const [staffUsers, setStaffUsers] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<ApiSchool | null>(null);
+  const [viewingSchool, setViewingSchool] = useState<ApiSchool | null>(null);
   const [deletingSchool, setDeletingSchool] = useState<ApiSchool | null>(null);
   const [formData, setFormData] = useState<SchoolFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof SchoolFormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const isSuperAdmin = user.role === "super_admin";
 
@@ -74,7 +73,7 @@ export default function DashboardSchools() {
       setStaffUsers(usersData.filter((u) => u.role === "lecturer" || u.role === "admin" || u.role === "super_admin"));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load schools";
-      toast.error(message);
+      notify.error("Failed to load schools", { description: message });
     } finally {
       setLoading(false);
     }
@@ -129,9 +128,20 @@ export default function DashboardSchools() {
     setFormOpen(true);
   };
 
+  const openViewDialog = (school: ApiSchool) => {
+    setViewingSchool(school);
+    setViewOpen(true);
+  };
+
   const openDeleteDialog = (school: ApiSchool) => {
     setDeletingSchool(school);
     setDeleteOpen(true);
+  };
+
+  const getHeadOfSchoolName = (userId: string | null) => {
+    if (!userId) return "—";
+    const found = staffUsers.find((u) => u.id === userId);
+    return found ? found.name : userId;
   };
 
   const handleSubmit = async () => {
@@ -143,6 +153,7 @@ export default function DashboardSchools() {
         fieldErrors[field] = err.message;
       });
       setErrors(fieldErrors);
+      notify.error("Please fix the form errors");
       return;
     }
 
@@ -159,16 +170,22 @@ export default function DashboardSchools() {
 
       if (editingSchool) {
         await api.updateSchool(editingSchool.id, payload);
-        toast.success("School updated successfully");
+        notify.success("School updated successfully", {
+          description: `${result.data.name} has been updated.`,
+        });
       } else {
         await api.createSchool(payload);
-        toast.success("School created successfully");
+        notify.success("School created successfully", {
+          description: `${result.data.name} is now available.`,
+        });
       }
       setFormOpen(false);
       await fetchSchools();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Operation failed";
-      toast.error(message);
+      notify.error(editingSchool ? "Failed to update school" : "Failed to create school", {
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -177,14 +194,19 @@ export default function DashboardSchools() {
   const handleDelete = async () => {
     if (!deletingSchool) return;
     try {
+      setDeleting(true);
       await api.deleteSchool(deletingSchool.id);
-      toast.success("School deleted successfully");
+      notify.success("School deleted successfully", {
+        description: `${deletingSchool.name} has been removed.`,
+      });
       setDeleteOpen(false);
       setDeletingSchool(null);
       await fetchSchools();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to delete school";
-      toast.error(message);
+      notify.error("Failed to delete school", { description: message });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -217,26 +239,12 @@ export default function DashboardSchools() {
           rowActions={(row) => {
             const school = row as unknown as ApiSchool;
             return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openEditForm(school)}>
-                    Edit
-                  </DropdownMenuItem>
-                  {isSuperAdmin && (
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => openDeleteDialog(school)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TableRowActions
+                onView={() => openViewDialog(school)}
+                onEdit={() => openEditForm(school)}
+                onDelete={() => openDeleteDialog(school)}
+                showDelete={isSuperAdmin}
+              />
             );
           }}
         />
@@ -351,6 +359,45 @@ export default function DashboardSchools() {
         </div>
       </EntityFormDialog>
 
+      <EntityViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        title="School details"
+        description="Information for this school."
+        fields={
+          viewingSchool
+            ? [
+                { label: "Name", value: viewingSchool.name },
+                { label: "Code", value: viewingSchool.code },
+                {
+                  label: "Description",
+                  value: viewingSchool.description || "—",
+                },
+                {
+                  label: "Head of School",
+                  value: getHeadOfSchoolName(viewingSchool.head_of_school),
+                },
+                {
+                  label: "Departments",
+                  value: viewingSchool.departments_count,
+                },
+                {
+                  label: "Status",
+                  value: (
+                    <Badge
+                      variant={
+                        viewingSchool.status === "active" ? "default" : "secondary"
+                      }
+                    >
+                      {viewingSchool.status}
+                    </Badge>
+                  ),
+                },
+              ]
+            : []
+        }
+      />
+
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -358,6 +405,7 @@ export default function DashboardSchools() {
         description={`Are you sure you want to delete "${deletingSchool?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
+        loading={deleting}
         destructive
       />
     </div>

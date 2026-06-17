@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 import { api, type ApiCourse, type ApiSchool, type ApiCourseUnit } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -24,12 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -93,7 +88,7 @@ function StudentCoursesView() {
       const myCourses = allCourses.filter((c) => enrolledCourseIds.includes(c.id));
       setCourses(myCourses);
     } catch {
-      toast.error("Failed to load courses");
+      notify.error("Failed to load courses");
     } finally {
       setLoading(false);
     }
@@ -176,6 +171,7 @@ function AdminCoursesView() {
   const [formData, setFormData] = useState<CourseFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -190,7 +186,9 @@ function AdminCoursesView() {
       setSchools(schoolsData);
       setCourseUnits(unitsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      const message = err instanceof Error ? err.message : "Failed to load data";
+      setError(message);
+      notify.error("Failed to load courses", { description: message });
     } finally {
       setLoading(false);
     }
@@ -313,6 +311,7 @@ function AdminCoursesView() {
         fieldErrors[field] = err.message;
       });
       setErrors(fieldErrors);
+      notify.error("Please fix the form errors");
       return;
     }
 
@@ -341,7 +340,9 @@ function AdminCoursesView() {
         setCourses((prev) =>
           prev.map((c) => (c.id === editingCourse.id ? updated : c)),
         );
-        toast.success("Course updated successfully");
+        notify.success("Course updated successfully", {
+          description: `${result.data.title} has been updated.`,
+        });
       } else {
         const created = await api.createCourse({
           title: result.data.title,
@@ -356,11 +357,16 @@ function AdminCoursesView() {
           unit_ids: result.data.unit_ids,
         });
         setCourses((prev) => [created, ...prev]);
-        toast.success("Course created successfully");
+        notify.success("Course created successfully", {
+          description: `${result.data.title} is now available.`,
+        });
       }
       setFormOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Operation failed");
+      const message = err instanceof Error ? err.message : "Operation failed";
+      notify.error(editingCourse ? "Failed to update course" : "Failed to create course", {
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -369,13 +375,19 @@ function AdminCoursesView() {
   const handleDelete = async () => {
     if (!deletingCourse) return;
     try {
+      setDeleting(true);
       await api.deleteCourse(deletingCourse.id);
       setCourses((prev) => prev.filter((c) => c.id !== deletingCourse.id));
-      toast.success("Course deleted successfully");
+      notify.success("Course deleted successfully", {
+        description: `${deletingCourse.title} has been removed.`,
+      });
       setDeleteOpen(false);
       setDeletingCourse(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      const message = err instanceof Error ? err.message : "Delete failed";
+      notify.error("Failed to delete course", { description: message });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -419,29 +431,12 @@ function AdminCoursesView() {
           rowActions={(row) => {
             const course = row as unknown as ApiCourse;
             return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/dashboard/courses/${course.id}`)}>
-                    View
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openEditForm(course)}>
-                    Edit
-                  </DropdownMenuItem>
-                  {isSuperAdmin && (
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => openDeleteDialog(course)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TableRowActions
+                onView={() => navigate(`/dashboard/courses/${course.id}`)}
+                onEdit={() => openEditForm(course)}
+                onDelete={() => openDeleteDialog(course)}
+                showDelete={isSuperAdmin}
+              />
             );
           }}
         />
@@ -650,6 +645,7 @@ function AdminCoursesView() {
         description={`Are you sure you want to delete "${deletingCourse?.title}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
+        loading={deleting}
         destructive
       />
     </div>

@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 import type { UserRole } from "@/lib/types";
 import { api, type ApiUser } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
+import { EntityViewDialog } from "@/components/dashboard/entity-view-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -22,21 +24,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
-const userSchema = z.object({
+const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Valid email is required"),
   role: z.enum(["super_admin", "admin", "lecturer", "student"]),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type UserFormData = z.infer<typeof userSchema>;
+const editUserSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  role: z.enum(["super_admin", "admin", "lecturer", "student"]),
+});
+
+type UserFormData = {
+  name: string;
+  email: string;
+  role: UserRole;
+  password: string;
+};
 
 const emptyForm: UserFormData = {
   name: "",
@@ -51,13 +58,17 @@ export default function DashboardAdmins() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<ApiUser | null>(null);
+  const [viewingUser, setViewingUser] = useState<ApiUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<ApiUser | null>(null);
   const [formData, setFormData] = useState<UserFormData>(emptyForm);
   const [formErrors, setFormErrors] = useState<
     Partial<Record<keyof UserFormData, string>>
   >({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const isSuperAdmin = currentUser.role === "super_admin";
 
@@ -71,7 +82,7 @@ export default function DashboardAdmins() {
       const message =
         err instanceof Error ? err.message : "Failed to fetch users";
       setError(message);
-      toast.error(message);
+      notify.error("Failed to load users", { description: message });
     } finally {
       setLoading(false);
     }
@@ -133,9 +144,27 @@ export default function DashboardAdmins() {
       ];
 
   const openCreateForm = () => {
+    setEditingUser(null);
     setFormData(emptyForm);
     setFormErrors({});
     setFormOpen(true);
+  };
+
+  const openEditForm = (user: ApiUser) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role as UserRole,
+      password: "",
+    });
+    setFormErrors({});
+    setFormOpen(true);
+  };
+
+  const openViewDialog = (user: ApiUser) => {
+    setViewingUser(user);
+    setViewOpen(true);
   };
 
   const openDeleteDialog = (user: ApiUser) => {
@@ -144,7 +173,38 @@ export default function DashboardAdmins() {
   };
 
   const handleSubmit = async () => {
-    const result = userSchema.safeParse(formData);
+    if (editingUser) {
+      const result = editUserSchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: Partial<Record<keyof UserFormData, string>> = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as keyof UserFormData;
+          fieldErrors[field] = err.message;
+        });
+        setFormErrors(fieldErrors);
+        notify.error("Please fix the form errors");
+        return;
+      }
+
+      try {
+        setSubmitting(true);
+        await api.updateUser(editingUser.id, result.data);
+        notify.success("User updated successfully", {
+          description: `${result.data.name}'s account has been updated.`,
+        });
+        setFormOpen(false);
+        await fetchUsers();
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to update user";
+        notify.error("Failed to update user", { description: message });
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    const result = createUserSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof UserFormData, string>> = {};
       result.error.errors.forEach((err) => {
@@ -152,6 +212,7 @@ export default function DashboardAdmins() {
         fieldErrors[field] = err.message;
       });
       setFormErrors(fieldErrors);
+      notify.error("Please fix the form errors");
       return;
     }
 
@@ -163,13 +224,15 @@ export default function DashboardAdmins() {
         result.data.password,
         result.data.role,
       );
-      toast.success("User created successfully");
+      notify.success("User created successfully", {
+        description: `${result.data.name} can now sign in.`,
+      });
       setFormOpen(false);
       await fetchUsers();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create user";
-      toast.error(message);
+      notify.error("Failed to create user", { description: message });
     } finally {
       setSubmitting(false);
     }
@@ -178,15 +241,20 @@ export default function DashboardAdmins() {
   const handleDelete = async () => {
     if (!deletingUser) return;
     try {
+      setDeleting(true);
       await api.deleteUser(deletingUser.id);
-      toast.success("User deleted successfully");
+      notify.success("User deleted successfully", {
+        description: `${deletingUser.name} has been removed.`,
+      });
       setDeleteOpen(false);
       setDeletingUser(null);
       await fetchUsers();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to delete user";
-      toast.error(message);
+      notify.error("Failed to delete user", { description: message });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -233,40 +301,30 @@ export default function DashboardAdmins() {
           data={users as unknown as Record<string, unknown>[]}
           searchableFields={["name", "email"]}
           searchPlaceholder="Search users..."
-          rowActions={
-            isSuperAdmin
-              ? (row) => {
-                  const user = row as unknown as ApiUser;
-                  // Don't show delete for the current user
-                  if (user.id === currentUser.id) return null;
-                  return (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => openDeleteDialog(user)}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  );
-                }
-              : undefined
-          }
+          rowActions={(row) => {
+            const user = row as unknown as ApiUser;
+            return (
+              <TableRowActions
+                onView={() => openViewDialog(user)}
+                onEdit={() => openEditForm(user)}
+                onDelete={() => openDeleteDialog(user)}
+                showDelete={isSuperAdmin && user.id !== currentUser.id}
+                showEdit={isSuperAdmin || currentUser.role === "admin"}
+              />
+            );
+          }}
         />
       </div>
 
       <EntityFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title="Add User"
-        description="Create a new user account."
+        title={editingUser ? "Edit User" : "Add User"}
+        description={
+          editingUser
+            ? "Update user account details."
+            : "Create a new user account."
+        }
         onSubmit={handleSubmit}
       >
         <div className="space-y-4">
@@ -301,21 +359,23 @@ export default function DashboardAdmins() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="user-password">Password</Label>
-            <Input
-              id="user-password"
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData((f) => ({ ...f, password: e.target.value }))
-              }
-              placeholder="Min 6 characters"
-            />
-            {formErrors.password && (
-              <p className="text-xs text-destructive">{formErrors.password}</p>
-            )}
-          </div>
+          {!editingUser && (
+            <div className="space-y-2">
+              <Label htmlFor="user-password">Password</Label>
+              <Input
+                id="user-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, password: e.target.value }))
+                }
+                placeholder="Min 6 characters"
+              />
+              {formErrors.password && (
+                <p className="text-xs text-destructive">{formErrors.password}</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Role</Label>
@@ -343,8 +403,35 @@ export default function DashboardAdmins() {
               <p className="text-xs text-destructive">{formErrors.role}</p>
             )}
           </div>
+
+          {submitting && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {editingUser ? "Updating..." : "Creating..."}
+            </div>
+          )}
         </div>
       </EntityFormDialog>
+
+      <EntityViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        title="User details"
+        description="Account information for this user."
+        fields={
+          viewingUser
+            ? [
+                { label: "Name", value: viewingUser.name },
+                { label: "Email", value: viewingUser.email },
+                { label: "Role", value: getRoleBadge(viewingUser.role) },
+                {
+                  label: "Created",
+                  value: format(new Date(viewingUser.created_at), "dd MMM yyyy HH:mm"),
+                },
+              ]
+            : []
+        }
+      />
 
       <ConfirmDialog
         open={deleteOpen}
@@ -353,6 +440,7 @@ export default function DashboardAdmins() {
         description={`Are you sure you want to delete "${deletingUser?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
+        loading={deleting}
         destructive
       />
     </div>
