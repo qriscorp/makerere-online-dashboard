@@ -634,6 +634,24 @@ export const api = {
       method: "PUT",
     }),
 
+  updateTutor: (
+    profileId: string,
+    data: {
+      subjects?: string[];
+      hourly_rate?: number;
+      bio?: string;
+      is_available?: boolean;
+      approval_status?: string;
+    },
+  ) =>
+    request<ApiTutorAdmin>(`/api/tutoring/admin/${profileId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteTutor: (profileId: string) =>
+    request<void>(`/api/tutoring/admin/${profileId}`, { method: "DELETE" }),
+
   // Enrollments
   getEnrollments: () => request<ApiEnrollment[]>("/api/enrollments"),
 
@@ -648,7 +666,17 @@ export const api = {
       method: "PUT",
     }),
 
-  // Payments (Interswitch Mobile Money)
+  updateEnrollment: (
+    id: string,
+    data: { status?: string; payment_status?: string },
+  ) =>
+    request<ApiEnrollment>("/api/enrollments/" + id, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteEnrollment: (id: string) =>
+    request<void>("/api/enrollments/" + id, { method: "DELETE" }),
   initiatePayment: (enrollmentId: string, phoneNumber: string) =>
     request<{
       id: string;
@@ -681,8 +709,32 @@ export const api = {
       completed_at: string | null;
     }>>("/api/payments"),
 
-  deleteEnrollment: (id: string) =>
-    request<void>("/api/enrollments/" + id, { method: "DELETE" }),
+  updatePayment: (
+    id: string,
+    data: { status?: string; description?: string },
+  ) =>
+    request<{
+      id: string;
+      student_id: string;
+      enrollment_id: string | null;
+      amount: number;
+      currency: string;
+      phone_number: string;
+      carrier: string;
+      payment_type: string;
+      status: string;
+      request_reference: string | null;
+      response_message: string | null;
+      description: string;
+      created_at: string;
+      completed_at: string | null;
+    }>(`/api/payments/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deletePayment: (id: string) =>
+    request<void>(`/api/payments/${id}`, { method: "DELETE" }),
 
   getMyUnitEnrollments: (courseId?: string) =>
     request<Array<{

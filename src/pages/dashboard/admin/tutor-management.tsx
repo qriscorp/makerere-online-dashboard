@@ -1,18 +1,27 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Loader2, Clock } from "lucide-react";
-import { toast } from "sonner";
 
 import { api, type ApiTutorAdmin } from "@/lib/api";
+import { notify } from "@/lib/notify";
+import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DataTable, type ColumnDef } from "@/components/dashboard/data-table";
+import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
+import { EntityViewDialog } from "@/components/dashboard/entity-view-dialog";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { TableRowActions } from "@/components/dashboard/table-row-actions";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -38,17 +47,35 @@ function getStatusBadge(status: string) {
   }
 }
 
+type TutorFormData = {
+  subjects: string;
+  hourly_rate: number;
+  bio: string;
+  is_available: boolean;
+  approval_status: string;
+};
+
 export default function TutorManagement() {
+  const { user } = useAuth();
+  const isSuperAdmin = user.role === "super_admin";
+
   const [tutors, setTutors] = useState<ApiTutorAdmin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{
-    id: string;
-    name: string;
-    action: "approve" | "reject";
-  } | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [viewing, setViewing] = useState<ApiTutorAdmin | null>(null);
+  const [editing, setEditing] = useState<ApiTutorAdmin | null>(null);
+  const [deleting, setDeleting] = useState<ApiTutorAdmin | null>(null);
+  const [formData, setFormData] = useState<TutorFormData>({
+    subjects: "",
+    hourly_rate: 50000,
+    bio: "",
+    is_available: true,
+    approval_status: "pending",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingLoading, setDeletingLoading] = useState(false);
 
   useEffect(() => {
     fetchTutors();
@@ -60,46 +87,119 @@ export default function TutorManagement() {
       const data = await api.getAdminTutors();
       setTutors(data);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load tutor profiles");
+      const message = err instanceof Error ? err.message : "Failed to load tutor profiles";
+      notify.error("Failed to load tutors", { description: message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = (tutor: ApiTutorAdmin) => {
-    setConfirmAction({ id: tutor.id, name: tutor.name, action: "approve" });
-    setConfirmOpen(true);
+  const openView = (tutor: ApiTutorAdmin) => {
+    setViewing(tutor);
+    setViewOpen(true);
   };
 
-  const handleReject = (tutor: ApiTutorAdmin) => {
-    setConfirmAction({ id: tutor.id, name: tutor.name, action: "reject" });
-    setConfirmOpen(true);
+  const openEdit = (tutor: ApiTutorAdmin) => {
+    setEditing(tutor);
+    setFormData({
+      subjects: tutor.subjects.join(", "),
+      hourly_rate: tutor.hourly_rate,
+      bio: tutor.bio,
+      is_available: tutor.is_available,
+      approval_status: tutor.approval_status,
+    });
+    setFormOpen(true);
   };
 
-  const handleConfirm = async () => {
-    if (!confirmAction) return;
+  const openDelete = (tutor: ApiTutorAdmin) => {
+    setDeleting(tutor);
+    setDeleteOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editing) return;
     try {
-      setActionLoading(confirmAction.id);
-      if (confirmAction.action === "approve") {
-        await api.approveTutor(confirmAction.id);
-        toast.success(`${confirmAction.name}'s tutoring profile approved`);
-      } else {
-        await api.rejectTutor(confirmAction.id);
-        toast.success(`${confirmAction.name}'s tutoring profile rejected`);
-      }
-      setConfirmOpen(false);
-      setConfirmAction(null);
+      setSubmitting(true);
+      await api.updateTutor(editing.id, {
+        subjects: formData.subjects
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        hourly_rate: formData.hourly_rate,
+        bio: formData.bio,
+        is_available: formData.is_available,
+        approval_status: formData.approval_status,
+      });
+      notify.success("Tutor profile updated successfully", {
+        description: `${editing.name}'s profile has been updated.`,
+      });
+      setFormOpen(false);
       await fetchTutors();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Action failed");
+      const message = err instanceof Error ? err.message : "Failed to update tutor";
+      notify.error("Failed to update tutor", { description: message });
     } finally {
-      setActionLoading(null);
+      setSubmitting(false);
     }
   };
 
-  const pendingTutors = tutors.filter((t) => t.approval_status === "pending");
-  const approvedTutors = tutors.filter((t) => t.approval_status === "approved");
-  const rejectedTutors = tutors.filter((t) => t.approval_status === "rejected");
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      setDeletingLoading(true);
+      await api.deleteTutor(deleting.id);
+      notify.success("Tutor profile deleted successfully", {
+        description: `${deleting.name} has been removed.`,
+      });
+      setDeleteOpen(false);
+      setDeleting(null);
+      await fetchTutors();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete tutor";
+      notify.error("Failed to delete tutor", { description: message });
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
+
+  const pendingCount = tutors.filter((t) => t.approval_status === "pending").length;
+  const approvedCount = tutors.filter((t) => t.approval_status === "approved").length;
+  const rejectedCount = tutors.filter((t) => t.approval_status === "rejected").length;
+
+  const columns: ColumnDef<Record<string, unknown>>[] = [
+    { key: "name", header: "Lecturer" },
+    {
+      key: "subjects",
+      header: "Subjects",
+      render: (row) => {
+        const t = row as unknown as ApiTutorAdmin;
+        return t.subjects.length > 0 ? t.subjects.join(", ") : "—";
+      },
+    },
+    {
+      key: "hourly_rate",
+      header: "Rate (UGX/hr)",
+      render: (row) =>
+        `UGX ${(row as unknown as ApiTutorAdmin).hourly_rate.toLocaleString()}`,
+    },
+    {
+      key: "approval_status",
+      header: "Approval",
+      render: (row) => getStatusBadge((row as unknown as ApiTutorAdmin).approval_status),
+    },
+    {
+      key: "is_available",
+      header: "Availability",
+      render: (row) => {
+        const t = row as unknown as ApiTutorAdmin;
+        return t.is_available ? (
+          <Badge variant="outline">Available</Badge>
+        ) : (
+          <Badge variant="secondary">Unavailable</Badge>
+        );
+      },
+    },
+  ];
 
   if (loading) {
     return (
@@ -113,193 +213,170 @@ export default function TutorManagement() {
     <div className="space-y-6">
       <PageHeader
         title="Tutor Management"
-        description="Review and approve lecturers who have offered to provide tutoring services. Only approved tutors are visible to students and on the public site."
+        description="Review and manage lecturer tutoring profiles."
       />
 
-      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex items-center gap-2 text-yellow-600">
             <Clock className="h-4 w-4" />
             <span className="text-xs font-medium">Pending Review</span>
           </div>
-          <p className="mt-2 text-2xl font-bold">{pendingTutors.length}</p>
+          <p className="mt-2 text-2xl font-bold">{pendingCount}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex items-center gap-2 text-green-600">
             <CheckCircle className="h-4 w-4" />
             <span className="text-xs font-medium">Approved</span>
           </div>
-          <p className="mt-2 text-2xl font-bold">{approvedTutors.length}</p>
+          <p className="mt-2 text-2xl font-bold">{approvedCount}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex items-center gap-2 text-red-600">
             <XCircle className="h-4 w-4" />
             <span className="text-xs font-medium">Rejected</span>
           </div>
-          <p className="mt-2 text-2xl font-bold">{rejectedTutors.length}</p>
+          <p className="mt-2 text-2xl font-bold">{rejectedCount}</p>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList>
-          <TabsTrigger value="pending">
-            Pending ({pendingTutors.length})
-          </TabsTrigger>
-          <TabsTrigger value="approved">
-            Approved ({approvedTutors.length})
-          </TabsTrigger>
-          <TabsTrigger value="rejected">
-            Rejected ({rejectedTutors.length})
-          </TabsTrigger>
-        </TabsList>
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+        <DataTable<Record<string, unknown>>
+          columns={columns}
+          data={tutors as unknown as Record<string, unknown>[]}
+          searchableFields={["name"]}
+          searchPlaceholder="Search tutors..."
+          emptyMessage="No tutor profiles found."
+          rowActions={(row) => {
+            const tutor = row as unknown as ApiTutorAdmin;
+            return (
+              <TableRowActions
+                onView={() => openView(tutor)}
+                onEdit={() => openEdit(tutor)}
+                onDelete={() => openDelete(tutor)}
+                showDelete={isSuperAdmin}
+              />
+            );
+          }}
+        />
+      </div>
 
-        <TabsContent value="pending" className="mt-4">
-          <TutorList
-            tutors={pendingTutors}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            actionLoading={actionLoading}
-            emptyMessage="No pending tutor applications."
-          />
-        </TabsContent>
-
-        <TabsContent value="approved" className="mt-4">
-          <TutorList
-            tutors={approvedTutors}
-            onReject={handleReject}
-            actionLoading={actionLoading}
-            emptyMessage="No approved tutors yet."
-          />
-        </TabsContent>
-
-        <TabsContent value="rejected" className="mt-4">
-          <TutorList
-            tutors={rejectedTutors}
-            onApprove={handleApprove}
-            actionLoading={actionLoading}
-            emptyMessage="No rejected tutor profiles."
-          />
-        </TabsContent>
-      </Tabs>
-
-      {/* Confirm Dialog */}
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={confirmAction?.action === "approve" ? "Approve Tutor" : "Reject Tutor"}
-        description={
-          confirmAction?.action === "approve"
-            ? `Are you sure you want to approve ${confirmAction?.name}'s tutoring profile? They will become visible to students and on the public tutoring page.`
-            : `Are you sure you want to reject ${confirmAction?.name}'s tutoring profile? They will not be visible to students.`
+      <EntityViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        title="Tutor profile"
+        fields={
+          viewing
+            ? [
+                { label: "Lecturer", value: viewing.name },
+                {
+                  label: "Subjects",
+                  value: viewing.subjects.length ? viewing.subjects.join(", ") : "—",
+                },
+                {
+                  label: "Hourly Rate",
+                  value: `UGX ${viewing.hourly_rate.toLocaleString()}`,
+                },
+                { label: "Bio", value: viewing.bio || "—" },
+                { label: "Approval", value: getStatusBadge(viewing.approval_status) },
+                {
+                  label: "Availability",
+                  value: viewing.is_available ? "Available" : "Unavailable",
+                },
+              ]
+            : []
         }
-        confirmLabel={confirmAction?.action === "approve" ? "Approve" : "Reject"}
-        onConfirm={handleConfirm}
-        destructive={confirmAction?.action === "reject"}
       />
-    </div>
-  );
-}
 
-// ─── Tutor List Component ──────────────────────────────────────────────────────
-
-function TutorList({
-  tutors,
-  onApprove,
-  onReject,
-  actionLoading,
-  emptyMessage,
-}: {
-  tutors: ApiTutorAdmin[];
-  onApprove?: (tutor: ApiTutorAdmin) => void;
-  onReject?: (tutor: ApiTutorAdmin) => void;
-  actionLoading: string | null;
-  emptyMessage: string;
-}) {
-  if (tutors.length === 0) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-soft">
-        <p>{emptyMessage}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {tutors.map((tutor) => (
-        <div
-          key={tutor.id}
-          className="rounded-xl border border-border bg-card p-5 shadow-soft"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            {/* Info */}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold">{tutor.name}</h3>
-                {getStatusBadge(tutor.approval_status)}
-                {tutor.is_available ? (
-                  <Badge variant="outline" className="text-xs">Available</Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                )}
-              </div>
-
-              {tutor.bio && (
-                <p className="text-sm text-muted-foreground">{tutor.bio}</p>
-              )}
-
-              <div className="flex flex-wrap gap-1">
-                {tutor.subjects.map((subject) => (
-                  <Badge key={subject} variant="secondary" className="text-xs">
-                    {subject}
-                  </Badge>
-                ))}
-                {tutor.subjects.length === 0 && (
-                  <span className="text-xs text-muted-foreground italic">No subjects set</span>
-                )}
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                Rate: <span className="font-medium text-foreground">UGX {tutor.hourly_rate.toLocaleString()}/hr</span>
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 shrink-0">
-              {onApprove && tutor.approval_status !== "approved" && (
-                <Button
-                  size="sm"
-                  onClick={() => onApprove(tutor)}
-                  disabled={actionLoading === tutor.id}
-                >
-                  {actionLoading === tutor.id ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : (
-                    <CheckCircle className="mr-1 h-3 w-3" />
-                  )}
-                  Approve
-                </Button>
-              )}
-              {onReject && tutor.approval_status !== "rejected" && (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => onReject(tutor)}
-                  disabled={actionLoading === tutor.id}
-                >
-                  {actionLoading === tutor.id ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : (
-                    <XCircle className="mr-1 h-3 w-3" />
-                  )}
-                  Reject
-                </Button>
-              )}
-            </div>
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title="Edit Tutor Profile"
+        description="Update tutoring profile details and approval status."
+        onSubmit={handleUpdate}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="tutor-subjects">Subjects (comma-separated)</Label>
+            <Input
+              id="tutor-subjects"
+              value={formData.subjects}
+              onChange={(e) =>
+                setFormData((f) => ({ ...f, subjects: e.target.value }))
+              }
+              placeholder="e.g. Mathematics, Physics"
+            />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="tutor-rate">Hourly Rate (UGX)</Label>
+            <Input
+              id="tutor-rate"
+              type="number"
+              min={0}
+              value={formData.hourly_rate}
+              onChange={(e) =>
+                setFormData((f) => ({
+                  ...f,
+                  hourly_rate: Number(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tutor-bio">Bio</Label>
+            <Textarea
+              id="tutor-bio"
+              value={formData.bio}
+              onChange={(e) => setFormData((f) => ({ ...f, bio: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Approval Status</Label>
+            <Select
+              value={formData.approval_status}
+              onValueChange={(val) =>
+                setFormData((f) => ({ ...f, approval_status: val }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="tutor-available"
+              checked={formData.is_available}
+              onCheckedChange={(checked) =>
+                setFormData((f) => ({ ...f, is_available: checked === true }))
+              }
+            />
+            <Label htmlFor="tutor-available">Available for tutoring</Label>
+          </div>
+          {submitting && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Updating...
+            </div>
+          )}
         </div>
-      ))}
+      </EntityFormDialog>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Tutor Profile"
+        description={`Are you sure you want to delete ${deleting?.name}'s tutoring profile? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        loading={deletingLoading}
+        destructive
+      />
     </div>
   );
 }
