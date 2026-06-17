@@ -6,11 +6,11 @@ import { toast } from "sonner";
 
 import {
   api,
-  resolveImageUrl,
   type ApiCourse,
   type ApiIntake,
   type ApiEnrollment,
 } from "@/lib/api";
+import { getCourseImageSrc } from "@/lib/course-images";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -142,9 +142,9 @@ export default function StudentAvailableCourses() {
               >
                 <div className="relative h-40 overflow-hidden bg-muted">
                   <img
-                    src={resolveImageUrl(course.image_url) || "/assets/makerere-logo.png"}
+                    src={getCourseImageSrc(course.image_url, course.title)}
                     alt={course.title}
-                    className={`h-full w-full ${course.image_url ? "object-cover" : "object-contain p-8 opacity-30"} group-hover:scale-105 transition-transform duration-500`}
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 right-3">
                     <Badge

@@ -1,16 +1,9 @@
-import { useState } from "react";
-import { Plus, Video, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Video, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-import type { VirtualClass, Platform } from "@/lib/types";
-import {
-  mockVirtualClasses,
-  mockAttendanceRecords,
-  mockCourseUnits,
-  mockEnrollments,
-  mockCourses,
-} from "@/lib/mock-data";
+import { api, type ApiVirtualClass, type ApiCourseUnit } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EntityFormDialog } from "@/components/dashboard/entity-form-dialog";
@@ -32,7 +25,7 @@ interface ClassFormData {
   date: string;
   startTime: string;
   duration: number;
-  platform: Platform | "";
+  platform: string;
   meetingLink: string;
 }
 
@@ -46,64 +39,76 @@ const emptyForm: ClassFormData = {
   meetingLink: "",
 };
 
+function getPlatformBadge(platform: string) {
+  if (platform === "zoom") {
+    return (
+      <Badge className="border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100">
+        Zoom
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="border-transparent bg-green-100 text-green-800 hover:bg-green-100">
+      Jitsi
+    </Badge>
+  );
+}
+
+function isUpcoming(cls: ApiVirtualClass): boolean {
+  if (cls.is_live) return true;
+  const classDate = new Date(cls.date);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return classDate >= now;
+}
+
 export default function DashboardVirtualLearning() {
   const { user } = useAuth();
   const isLecturer = user.role === "lecturer";
   const isStudent = user.role === "student";
 
-  const [classes, setClasses] = useState<VirtualClass[]>([...mockVirtualClasses]);
+  const [classes, setClasses] = useState<ApiVirtualClass[]>([]);
+  const [courseUnits, setCourseUnits] = useState<ApiCourseUnit[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [formData, setFormData] = useState<ClassFormData>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
-  // Get enrolled course unit IDs for students
-  const enrolledCourseUnitIds = (() => {
-    if (!isStudent) return [];
-    const studentEnrollments = mockEnrollments.filter(
-      (e) => e.studentId === user.id && e.status !== "dropped",
-    );
-    const enrolledCourseIds = studentEnrollments.map((e) => e.courseId).filter(Boolean) as string[];
-    const unitIdsFromCourses = mockCourses
-      .filter((c) => enrolledCourseIds.includes(c.id))
-      .flatMap((c) => c.unitIds);
-    const directUnitIds = studentEnrollments.map((e) => e.courseUnitId).filter(Boolean) as string[];
-    return [...new Set([...unitIdsFromCourses, ...directUnitIds])];
-  })();
+  const lecturerUnits = isLecturer
+    ? courseUnits.filter((u) => u.lecturer_id === user.id)
+    : courseUnits;
 
-  // Filter classes based on role
-  const displayedClasses = isLecturer
-    ? classes.filter((c) => c.lecturerId === user.id)
-    : isStudent
-      ? classes.filter((c) => enrolledCourseUnitIds.includes(c.courseUnitId))
-      : classes;
-
-  const now = new Date();
-  const upcomingClasses = displayedClasses
-    .filter((c) => new Date(c.date) >= now || c.isLive)
+  const upcomingClasses = classes
+    .filter(isUpcoming)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const pastClasses = displayedClasses
-    .filter((c) => new Date(c.date) < now && !c.isLive)
+  const pastClasses = classes
+    .filter((c) => !isUpcoming(c))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const getCourseUnitName = (unitId: string) => {
-    const unit = mockCourseUnits.find((u) => u.id === unitId);
-    return unit?.title ?? "Unknown Unit";
-  };
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const getPlatformBadge = (platform: Platform) => {
-    if (platform === "zoom") {
-      return (
-        <Badge className="border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100">
-          Zoom
-        </Badge>
-      );
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [classesData, unitsData] = await Promise.all([
+        api.getVirtualClasses(),
+        api.getCourseUnits(),
+      ]);
+      setClasses(classesData);
+      setCourseUnits(unitsData);
+    } catch {
+      toast.error("Failed to load virtual classes");
+    } finally {
+      setLoading(false);
     }
-    return (
-      <Badge className="border-transparent bg-green-100 text-green-800 hover:bg-green-100">
-        Jitsi
-      </Badge>
-    );
+  }
+
+  const getCourseUnitName = (unitId: string) => {
+    const unit = courseUnits.find((u) => u.id === unitId);
+    return unit?.title ?? "Unknown Unit";
   };
 
   const openScheduleForm = () => {
@@ -112,7 +117,7 @@ export default function DashboardVirtualLearning() {
     setFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors: Partial<Record<string, string>> = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.courseUnitId) newErrors.courseUnitId = "Course unit is required";
@@ -126,28 +131,31 @@ export default function DashboardVirtualLearning() {
       return;
     }
 
-    const newClass: VirtualClass = {
-      id: `vc-${Date.now()}`,
-      title: formData.title,
-      courseUnitId: formData.courseUnitId,
-      lecturerId: user.id,
-      date: formData.date,
-      startTime: formData.startTime,
-      duration: formData.duration,
-      platform: formData.platform as Platform,
-      meetingLink: formData.meetingLink,
-      attendeeCount: 0,
-      isLive: false,
-    };
-
-    setClasses((prev) => [...prev, newClass]);
-    toast.success("Class scheduled successfully");
-    setFormOpen(false);
+    try {
+      await api.createVirtualClass({
+        course_unit_id: formData.courseUnitId,
+        title: formData.title,
+        date: formData.date,
+        start_time: formData.startTime,
+        duration: formData.duration,
+        platform: formData.platform,
+        meeting_link: formData.meetingLink,
+      });
+      toast.success("Class scheduled successfully");
+      setFormOpen(false);
+      await loadData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to schedule class");
+    }
   };
 
-  const getAttendanceForClass = (classId: string) => {
-    return mockAttendanceRecords.filter((r) => r.classId === classId);
-  };
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -169,7 +177,6 @@ export default function DashboardVirtualLearning() {
         )}
       </PageHeader>
 
-      {/* Upcoming Classes */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">Upcoming Classes</h2>
         <div className="space-y-3">
@@ -190,16 +197,16 @@ export default function DashboardVirtualLearning() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{cls.title}</p>
-                      {cls.isLive && (
+                      {cls.is_live && (
                         <Badge className="border-transparent bg-red-100 text-red-800 hover:bg-red-100">
                           Live
                         </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{getCourseUnitName(cls.courseUnitId)}</span>
+                      <span>{getCourseUnitName(cls.course_unit_id)}</span>
                       <span>
-                        {format(new Date(cls.date), "MMM d, yyyy")} at {cls.startTime}
+                        {format(new Date(cls.date), "MMM d, yyyy")} at {cls.start_time}
                       </span>
                       <span>{cls.duration} min</span>
                     </div>
@@ -207,10 +214,7 @@ export default function DashboardVirtualLearning() {
                 </div>
                 <div className="flex items-center gap-3">
                   {getPlatformBadge(cls.platform)}
-                  <span className="text-sm text-muted-foreground">
-                    {cls.attendeeCount} attendees
-                  </span>
-                  <Button size="sm" onClick={() => window.open(cls.meetingLink, "_blank")}>
+                  <Button size="sm" onClick={() => window.open(cls.meeting_link, "_blank")}>
                     <ExternalLink className="mr-1 h-3 w-3" />
                     Join
                   </Button>
@@ -221,7 +225,6 @@ export default function DashboardVirtualLearning() {
         </div>
       </div>
 
-      {/* Past Classes */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">Past Classes</h2>
         <div className="space-y-3">
@@ -230,57 +233,29 @@ export default function DashboardVirtualLearning() {
               <p>No past classes.</p>
             </div>
           ) : (
-            pastClasses.map((cls) => {
-              const attendance = getAttendanceForClass(cls.id);
-              return (
-                <div
-                  key={cls.id}
-                  className="rounded-2xl border border-border bg-card p-4 shadow-soft"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <Video className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{cls.title}</p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{getCourseUnitName(cls.courseUnitId)}</span>
-                          <span>
-                            {format(new Date(cls.date), "MMM d, yyyy")} at {cls.startTime}
-                          </span>
-                          <span>{cls.attendeeCount} attendees</span>
-                        </div>
-                      </div>
-                    </div>
-                    {getPlatformBadge(cls.platform)}
+            pastClasses.map((cls) => (
+              <div
+                key={cls.id}
+                className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-soft"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                    <Video className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  {attendance.length > 0 && (
-                    <div className="mt-3 border-t pt-3">
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">
-                        Attendance Records
-                      </p>
-                      <div className="space-y-1">
-                        {attendance.map((record) => (
-                          <div
-                            key={record.id}
-                            className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-muted/50"
-                          >
-                            <span className="font-medium">{record.studentName}</span>
-                            <div className="flex gap-4 text-muted-foreground">
-                              <span>Joined: {format(new Date(record.joinTime), "HH:mm")}</span>
-                              {record.leaveTime && (
-                                <span>Left: {format(new Date(record.leaveTime), "HH:mm")}</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  <div>
+                    <p className="font-medium">{cls.title}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{getCourseUnitName(cls.course_unit_id)}</span>
+                      <span>
+                        {format(new Date(cls.date), "MMM d, yyyy")} at {cls.start_time}
+                      </span>
+                      <span>{cls.duration} min</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-              );
-            })
+                {getPlatformBadge(cls.platform)}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -314,7 +289,7 @@ export default function DashboardVirtualLearning() {
                 <SelectValue placeholder="Select course unit" />
               </SelectTrigger>
               <SelectContent>
-                {mockCourseUnits.map((unit) => (
+                {(isLecturer ? lecturerUnits : courseUnits).map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.title}
                   </SelectItem>
@@ -364,7 +339,7 @@ export default function DashboardVirtualLearning() {
             <Label>Platform</Label>
             <Select
               value={formData.platform}
-              onValueChange={(val) => setFormData((f) => ({ ...f, platform: val as Platform }))}
+              onValueChange={(val) => setFormData((f) => ({ ...f, platform: val }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select platform" />

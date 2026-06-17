@@ -21,8 +21,8 @@ import {
   type ApiCourseUnit,
   type ApiSchool,
   type ApiEnrollment,
-  resolveImageUrl,
 } from "@/lib/api";
+import { getCourseImageSrc } from "@/lib/course-images";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -225,9 +225,9 @@ export default function DashboardCourseDetail() {
           <div className="mt-4 rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             <div className="relative h-48 bg-muted">
               <img
-                src={resolveImageUrl(course.image_url) || "/assets/makerere-logo.png"}
+                src={getCourseImageSrc(course.image_url, course.title)}
                 alt={course.title}
-                className={`h-full w-full ${course.image_url ? "object-cover" : "object-contain p-8 opacity-30"}`}
+                className="h-full w-full object-cover"
               />
               <Button
                 size="sm"

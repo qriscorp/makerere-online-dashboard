@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Clock, Users, Loader2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 
-import { api, resolveImageUrl, type ApiCourse, type ApiIntake } from "@/lib/api";
+import { api, type ApiCourse, type ApiIntake } from "@/lib/api";
+import { getCourseImageSrc } from "@/lib/course-images";
 import { useAuth } from "@/lib/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,10 @@ export default function Courses() {
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={resolveImageUrl(course.image_url) || "/assets/makerere-logo.png"}
+                    src={getCourseImageSrc(course.image_url, course.title)}
                     alt={course.title}
                     loading="lazy"
-                    className={`h-full w-full ${course.image_url ? "object-cover" : "object-contain p-8 opacity-30"} group-hover:scale-105 transition duration-700`}
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-700"
                   />
                   <span className="absolute top-3 right-3 text-xs bg-background/95 text-foreground px-2.5 py-1 rounded-full font-semibold">
                     {course.fee === 0 ? "Free" : `UGX ${course.fee.toLocaleString()}`}
